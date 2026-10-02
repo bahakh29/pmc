@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PMC Internal Medicine Dashboard</title>
+    <!-- Tailwind CSS for modern, custom styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 10px 30px -10px rgba(15, 118, 110, 0.15);
+            border: 1px solid rgba(255,255,255,0.4);
+            border-radius: 1rem;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col items-center justify-center relative p-4 sm:p-8">
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="w-full max-w-md glass-panel p-8 text-center transition-all duration-500 z-10 relative">
+        <div class="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+        </div>
+        <h2 class="text-2xl font-bold text-slate-800 mb-2">PMC Dashboard</h2>
+        <p class="text-slate-500 text-sm mb-6">Internal Medicine Department Secure Access</p>
+        
+        <form id="login-form">
+            <input type="password" id="password-input" placeholder="Enter Access Password" 
+                   class="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 mb-4 text-center tracking-widest text-slate-700">
+            <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 rounded-lg transition-colors shadow-md hover:shadow-lg">
+                Access Roster
+            </button>
+            <p id="login-error" class="text-red-500 text-sm mt-3 hidden font-medium">Incorrect password. Please try again.</p>
+        </form>
+    </div>
+
+    <!-- DASHBOARD SCREEN (Hidden by default) -->
+    <div id="dashboard-screen" class="w-full max-w-7xl hidden flex-col w-full h-full pb-10">
+        
+        <header class="flex flex-col sm:flex-row justify-between items-center mb-8 glass-panel px-8 py-6">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-800">Palestine Medical Complex</h1>
+                <p class="text-teal-600 font-medium">Internal Medicine Department - October 2026</p>
+            </div>
+            <button onclick="logout()" class="mt-4 sm:mt-0 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold transition-colors border border-slate-200">
+                Sign Out
+            </button>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- SECTION 1: Daily Roster Lookup -->
+            <section class="glass-panel p-6 flex flex-col h-full">
+                <h3 class="text-xl font-bold text-slate-800 mb-4 border-b pb-2 flex items-center justify-between">
+                    <span>Daily Roster Lookup</span>
+                    <span id="display-day-name" class="text-teal-600 font-bold bg-teal-50 px-3 py-1 rounded-full text-sm">Select a day</span>
+                </h3>
+                
+                <div class="mb-5 flex space-x-3 items-center">
+                    <label class="text-sm font-semibold text-slate-600">Day of Month:</label>
+                    <input type="number" id="day-input" min="1" max="31" placeholder="e.g. 15" 
+                           class="w-24 px-3 py-2 border rounded-md focus:ring-2 focus:ring-teal-500 outline-none font-bold text-lg text-center shadow-inner">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 flex-grow" id="daily-results-container">
+                    <!-- On Call Card -->
+                    <div class="bg-red-50 border border-red-100 rounded-lg p-3">
+                        <div class="text-xs font-bold text-red-800 uppercase mb-2 tracking-wide border-b border-red-200 pb-1">On Call</div>
+                        <ul id="list-oncall" class="text-sm space-y-1 font-medium text-red-900 min-h-[60px]" dir="rtl"></ul>
+                    </div>
+                    <!-- Post Call Card -->
+                    <div class="bg-orange-50 border border-orange-100 rounded-lg p-3">
+                        <div class="text-xs font-bold text-orange-800 uppercase mb-2 tracking-wide border-b border-orange-200 pb-1">Post Call</div>
+                        <ul id="list-postcall" class="text-sm space-y-1 font-medium text-orange-900 min-h-[60px]" dir="rtl"></ul>
+                    </div>
+                    <!-- A Shift Card -->
+                    <div class="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                        <div class="text-xs font-bold text-blue-800 uppercase mb-2 tracking-wide border-b border-blue-200 pb-1">A-Shift</div>
+                        <ul id="list-a" class="text-sm space-y-1 font-medium text-blue-900 min-h-[60px]" dir="rtl"></ul>
+                    </div>
+                    <!-- Off Card -->
+                    <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-3">
+                        <div class="text-xs font-bold text-emerald-800 uppercase mb-2 tracking-wide border-b border-emerald-200 pb-1">Off / Not Assigned</div>
+                        <ul id="list-off" class="text-sm space-y-1 text-emerald-900 min-h-[60px]" dir="rtl"></ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2: Resident Data Lookup -->
+            <section class="glass-panel p-6 flex flex-col h-full">
+                <h3 class="text-xl font-bold text-slate-800 mb-4 border-b pb-2">Resident Profile & Totals</h3>
+                
+                <div class="mb-5 flex flex-col space-y-2 relative">
+                    <label class="text-sm font-semibold text-slate-600">Select Resident:</label>
+                    <input list="resident-list" id="resident-input" placeholder="Search for resident..." 
+                           class="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-teal-500 outline-none text-right" dir="rtl">
+                    <datalist id="resident-list"></datalist>
+                </div>
+
+                <div id="resident-stats-container" class="hidden flex-col h-full">
+                    <div class="grid grid-cols-4 gap-2 mb-4">
+                        <div class="bg-white border shadow-sm rounded-lg p-3 text-center border-b-4 border-red-500">
+                            <div class="text-[10px] text-slate-500 uppercase font-bold">On Call</div>
+                            <div id="stat-oncall" class="text-2xl font-bold text-slate-800">0</div>
+                        </div>
+                        <div class="bg-white border shadow-sm rounded-lg p-3 text-center border-b-4 border-orange-500">
+                            <div class="text-[10px] text-slate-500 uppercase font-bold">Post Call</div>
+                            <div id="stat-postcall" class="text-2xl font-bold text-slate-800">0</div>
+                        </div>
+                        <div class="bg-white border shadow-sm rounded-lg p-3 text-center border-b-4 border-blue-500">
+                            <div class="text-[10px] text-slate-500 uppercase font-bold">A-Shift</div>
+                            <div id="stat-a" class="text-2xl font-bold text-slate-800">0</div>
+                        </div>
+                        <div class="bg-white border shadow-sm rounded-lg p-3 text-center border-b-4 border-emerald-500">
+                            <div class="text-[10px] text-slate-500 uppercase font-bold">Off</div>
+                            <div id="stat-off" class="text-2xl font-bold text-slate-800">0</div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-50 rounded-lg p-4 border border-slate-200 overflow-y-auto max-h-48 custom-scroll">
+                        <h4 class="text-sm font-bold text-slate-600 mb-3 sticky top-0 bg-slate-50">Full Monthly Schedule</h4>
+                        <table class="w-full text-sm text-left">
+                            <tbody id="resident-schedule-table" class="divide-y divide-slate-200">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="resident-empty-state" class="flex-grow flex items-center justify-center text-slate-400 text-sm">
+                    Search and select a resident to view their statistics.
+                </div>
+            </section>
+        </div>
+
+        <!-- SECTION 3: Main Chart -->
+        <section class="glass-panel p-6 w-full mb-8">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b pb-2">Department Workload Overview</h3>
+            <div class="w-full h-[400px]">
+                <canvas id="mainChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Signature Footer -->
+        <footer class="text-center text-sm font-semibold text-slate-400 pt-4 pb-8">
+            Created by Dr. Baha' Khalifa
+        </footer>
+    </div>
+
+    <!-- SCRIPT DATA & LOGIC -->
+    <script>
+        // Generated Data from OCT-2026-Master.xlsx
+        const dashboardData = {"residents": ["\u0634\u0644\u0637\u0641", "\u062f\u064a\u0646\u0627", "\u0639\u0645\u0631", "\u0645\u062e\u0637\u0648\u0628", "\u0627\u0631\u064a\u062c", "\u0639\u0644\u0627\u0621", "\u0628\u0634\u0627\u0631", "\u0643\u0631\u064a\u0645", "\u0628\u0631\u0627\u0621", "\u062f\u0627\u0644\u064a\u0646", "\u062d\u0648\u0627\u0631\u062b", "\u0641\u0637\u0627\u064a\u0631", "\u0646\u0633\u0631\u064a\u0646", "\u062f\u064a\u0645\u0627", "\u0632\u064a\u0646", "\u0628\u0634\u0631\u0649", "\u0647\u064a\u0627", "\u062a\u0645\u0627\u0636\u0631", "\u062d\u0631\u0628"], "schedule": {"1": {"dayOfWeek": "Thursday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "On call", "\u0627\u0631\u064a\u062c": "Off", "\u0639\u0644\u0627\u0621": "Off", "\u0628\u0634\u0627\u0631": "Off", "\u0643\u0631\u064a\u0645": "On call", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "On call", "\u062f\u064a\u0645\u0627": "Off", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "A", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "A", "\u062d\u0631\u0628": "On call"}}, "2": {"dayOfWeek": "Friday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "On call", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "Off", "\u0639\u0644\u0627\u0621": "Off", "\u0628\u0634\u0627\u0631": "Off", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "On call", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "On call", "\u0646\u0633\u0631\u064a\u0646": "Off", "\u062f\u064a\u0645\u0627": "A", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "On call", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "3": {"dayOfWeek": "Saturday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "Off", "\u0639\u0644\u0627\u0621": "A", "\u0628\u0634\u0627\u0631": "Off", "\u0643\u0631\u064a\u0645": "On call", "\u0628\u0631\u0627\u0621": "On call", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "On call", "\u062f\u064a\u0645\u0627": "On call", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "Off", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "4": {"dayOfWeek": "Sunday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "A", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "A", "\u0639\u0644\u0627\u0621": "On call", "\u0628\u0634\u0627\u0631": "A", "\u0643\u0631\u064a\u0645": "Post call", "\u0628\u0631\u0627\u0621": "Post call", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "On call", "\u0646\u0633\u0631\u064a\u0646": "Post call", "\u062f\u064a\u0645\u0627": "Post call", "\u0632\u064a\u0646": "On call", "\u0628\u0634\u0631\u0649": "On call", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "A", "\u062d\u0631\u0628": "Off"}}, "5": {"dayOfWeek": "Monday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "A", "\u0645\u062e\u0637\u0648\u0628": "A", "\u0627\u0631\u064a\u062c": "On call", "\u0639\u0644\u0627\u0621": "Post call", "\u0628\u0634\u0627\u0631": "A", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "A", "\u062f\u0627\u0644\u064a\u0646": "On call", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Post call", "\u0646\u0633\u0631\u064a\u0646": "On call", "\u062f\u064a\u0645\u0627": "On call", "\u0632\u064a\u0646": "Post call", "\u0628\u0634\u0631\u0649": "Post call", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "A", "\u062d\u0631\u0628": "Off"}}, "6": {"dayOfWeek": "Tuesday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "On call", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "Post call", "\u0639\u0644\u0627\u0621": "A", "\u0628\u0634\u0627\u0631": "A", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "Post call", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "On call", "\u0646\u0633\u0631\u064a\u0646": "Post call", "\u062f\u064a\u0645\u0627": "Post call", "\u0632\u064a\u0646": "On call", "\u0628\u0634\u0631\u0649": "On call", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "A", "\u062d\u0631\u0628": "Off"}}, "7": {"dayOfWeek": "Wednesday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Post call", "\u0645\u062e\u0637\u0648\u0628": "A", "\u0627\u0631\u064a\u062c": "A", "\u0639\u0644\u0627\u0621": "A", "\u0628\u0634\u0627\u0631": "On call", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "On call", "\u062f\u0627\u0644\u064a\u0646": "A", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "Post call", "\u0646\u0633\u0631\u064a\u0646": "On call", "\u062f\u064a\u0645\u0627": "On call", "\u0632\u064a\u0646": "Post call", "\u0628\u0634\u0631\u0649": "Post call", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "A", "\u062d\u0631\u0628": "Off"}}, "8": {"dayOfWeek": "Thursday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "On call", "\u0645\u062e\u0637\u0648\u0628": "On call", "\u0627\u0631\u064a\u062c": "Off", "\u0639\u0644\u0627\u0621": "Off", "\u0628\u0634\u0627\u0631": "Post call", "\u0643\u0631\u064a\u0645": "On call", "\u0628\u0631\u0627\u0621": "Post call", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "On call", "\u0646\u0633\u0631\u064a\u0646": "Post call", "\u062f\u064a\u0645\u0627": "Post call", "\u0632\u064a\u0646": "A", "\u0628\u0634\u0631\u0649": "A", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "9": {"dayOfWeek": "Friday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "Off", "\u0639\u0644\u0627\u0621": "On call", "\u0628\u0634\u0627\u0631": "Off", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "On call", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "On call", "\u062f\u064a\u0645\u0627": "Off", "\u0632\u064a\u0646": "A", "\u0628\u0634\u0631\u0649": "Off", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "On call"}}, "10": {"dayOfWeek": "Saturday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "On call", "\u0639\u0644\u0627\u0621": "Off", "\u0628\u0634\u0627\u0631": "Off", "\u0643\u0631\u064a\u0645": "On call", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "Off", "\u062f\u064a\u0645\u0627": "A", "\u0632\u064a\u0646": "On call", "\u0628\u0634\u0631\u0649": "On call", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "11": {"dayOfWeek": "Sunday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "A", "\u0645\u062e\u0637\u0648\u0628": "A", "\u0627\u0631\u064a\u062c": "Post call", "\u0639\u0644\u0627\u0621": "On call", "\u0628\u0634\u0627\u0631": "On call", "\u0643\u0631\u064a\u0645": "Post call", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "A", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "On call", "\u0646\u0633\u0631\u064a\u0646": "A", "\u062f\u064a\u0645\u0627": "On call", "\u0632\u064a\u0646": "Post call", "\u0628\u0634\u0631\u0649": "Post call", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "12": {"dayOfWeek": "Monday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "A", "\u0645\u062e\u0637\u0648\u0628": "On call", "\u0627\u0631\u064a\u062c": "A", "\u0639\u0644\u0627\u0621": "Post call", "\u0628\u0634\u0627\u0631": "Post call", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "A", "\u062f\u0627\u0644\u064a\u0646": "On call", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Post call", "\u0646\u0633\u0631\u064a\u0646": "On call", "\u062f\u064a\u0645\u0627": "Post call", "\u0632\u064a\u0646": "A", "\u0628\u0634\u0631\u0649": "On call", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "13": {"dayOfWeek": "Tuesday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "On call", "\u0645\u062e\u0637\u0648\u0628": "Post call", "\u0627\u0631\u064a\u062c": "A", "\u0639\u0644\u0627\u0621": "A", "\u0628\u0634\u0627\u0631": "A", "\u0643\u0631\u064a\u0645": "On call", "\u0628\u0631\u0627\u0621": "A", "\u062f\u0627\u0644\u064a\u0646": "Post call", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "On call", "\u0646\u0633\u0631\u064a\u0646": "Post call", "\u062f\u064a\u0645\u0627": "Off", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "Post call", "\u0647\u064a\u0627": "On call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "14": {"dayOfWeek": "Wednesday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "Post call", "\u0645\u062e\u0637\u0648\u0628": "A", "\u0627\u0631\u064a\u062c": "A", "\u0639\u0644\u0627\u0621": "A", "\u0628\u0634\u0627\u0631": "On call", "\u0643\u0631\u064a\u0645": "Post call", "\u0628\u0631\u0627\u0621": "On call", "\u062f\u0627\u0644\u064a\u0646": "A", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "Post call", "\u0646\u0633\u0631\u064a\u0646": "On call", "\u062f\u064a\u0645\u0627": "On call", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "Off", "\u0647\u064a\u0627": "Post call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "15": {"dayOfWeek": "Thursday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "On call", "\u0645\u062e\u0637\u0648\u0628": "On call", "\u0627\u0631\u064a\u062c": "A", "\u0639\u0644\u0627\u0621": "Off", "\u0628\u0634\u0627\u0631": "Post call", "\u0643\u0631\u064a\u0645": "On call", "\u0628\u0631\u0627\u0621": "Post call", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "A", "\u0646\u0633\u0631\u064a\u0646": "Post call", "\u062f\u064a\u0645\u0627": "Post call", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "Off", "\u0647\u064a\u0627": "On call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "16": {"dayOfWeek": "Friday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "A", "\u0627\u0631\u064a\u062c": "Off", "\u0639\u0644\u0627\u0621": "On call", "\u0628\u0634\u0627\u0631": "On call", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "Off", "\u062f\u064a\u0645\u0627": "Off", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "On call", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "On call"}}, "17": {"dayOfWeek": "Saturday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "On call", "\u0639\u0644\u0627\u0621": "Off", "\u0628\u0634\u0627\u0631": "Off", "\u0643\u0631\u064a\u0645": "A", "\u0628\u0631\u0627\u0621": "On call", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "Off", "\u062f\u064a\u0645\u0627": "On call", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "Off", "\u0647\u064a\u0627": "On call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "18": {"dayOfWeek": "Sunday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "A", "\u0645\u062e\u0637\u0648\u0628": "On call", "\u0627\u0631\u064a\u062c": "Post call", "\u0639\u0644\u0627\u0621": "On call", "\u0628\u0634\u0627\u0631": "A", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "Post call", "\u062f\u0627\u0644\u064a\u0646": "On call", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "On call", "\u062f\u064a\u0645\u0627": "Post call", "\u0632\u064a\u0646": "A", "\u0628\u0634\u0631\u0649": "Off", "\u0647\u064a\u0627": "Post call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "19": {"dayOfWeek": "Monday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "A", "\u0645\u062e\u0637\u0648\u0628": "Post call", "\u0627\u0631\u064a\u062c": "On call", "\u0639\u0644\u0627\u0621": "Post call", "\u0628\u0634\u0627\u0631": "A", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "Post call", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "A", "\u0646\u0633\u0631\u064a\u0646": "Post call", "\u062f\u064a\u0645\u0627": "Off", "\u0632\u064a\u0646": "On call", "\u0628\u0634\u0631\u0649": "On call", "\u0647\u064a\u0627": "On call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "20": {"dayOfWeek": "Tuesday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "On call", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "Post call", "\u0639\u0644\u0627\u0621": "On call", "\u0628\u0634\u0627\u0631": "Off", "\u0643\u0631\u064a\u0645": "A", "\u0628\u0631\u0627\u0621": "A", "\u062f\u0627\u0644\u064a\u0646": "On call", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "On call", "\u062f\u064a\u0645\u0627": "Off", "\u0632\u064a\u0646": "Post call", "\u0628\u0634\u0631\u0649": "Post call", "\u0647\u064a\u0627": "Post call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "21": {"dayOfWeek": "Wednesday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "Post call", "\u0645\u062e\u0637\u0648\u0628": "A", "\u0627\u0631\u064a\u062c": "Off", "\u0639\u0644\u0627\u0621": "Post call", "\u0628\u0634\u0627\u0631": "On call", "\u0643\u0631\u064a\u0645": "A", "\u0628\u0631\u0627\u0621": "A", "\u062f\u0627\u0644\u064a\u0646": "Post call", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "Post call", "\u062f\u064a\u0645\u0627": "Off", "\u0632\u064a\u0646": "On call", "\u0628\u0634\u0631\u0649": "On call", "\u0647\u064a\u0627": "On call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "22": {"dayOfWeek": "Thursday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "On call", "\u0645\u062e\u0637\u0648\u0628": "On call", "\u0627\u0631\u064a\u062c": "Off", "\u0639\u0644\u0627\u0621": "Off", "\u0628\u0634\u0627\u0631": "Post call", "\u0643\u0631\u064a\u0645": "On call", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "On call", "\u0646\u0633\u0631\u064a\u0646": "A", "\u062f\u064a\u0645\u0627": "Off", "\u0632\u064a\u0646": "Post call", "\u0628\u0634\u0631\u0649": "Post call", "\u0647\u064a\u0627": "Post call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "23": {"dayOfWeek": "Friday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "Off", "\u0639\u0644\u0627\u0621": "On call", "\u0628\u0634\u0627\u0631": "Off", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "On call", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "Off", "\u062f\u064a\u0645\u0627": "A", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "Off", "\u0647\u064a\u0627": "On call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "On call"}}, "24": {"dayOfWeek": "Saturday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "On call", "\u0639\u0644\u0627\u0621": "Off", "\u0628\u0634\u0627\u0631": "Off", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "On call", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "On call", "\u062f\u064a\u0645\u0627": "On call", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "Off", "\u0647\u064a\u0627": "A", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "25": {"dayOfWeek": "Sunday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "A", "\u0645\u062e\u0637\u0648\u0628": "A", "\u0627\u0631\u064a\u062c": "Post call", "\u0639\u0644\u0627\u0621": "Off", "\u0628\u0634\u0627\u0631": "On call", "\u0643\u0631\u064a\u0645": "A", "\u0628\u0631\u0627\u0621": "A", "\u062f\u0627\u0644\u064a\u0646": "Post call", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "On call", "\u0646\u0633\u0631\u064a\u0646": "Post call", "\u062f\u064a\u0645\u0627": "Post call", "\u0632\u064a\u0646": "On call", "\u0628\u0634\u0631\u0649": "Off", "\u0647\u064a\u0627": "On call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "26": {"dayOfWeek": "Monday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "On call", "\u0639\u0644\u0627\u0621": "On call", "\u0628\u0634\u0627\u0631": "Post call", "\u0643\u0631\u064a\u0645": "A", "\u0628\u0631\u0627\u0621": "A", "\u062f\u0627\u0644\u064a\u0646": "A", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Post call", "\u0646\u0633\u0631\u064a\u0646": "Off", "\u062f\u064a\u0645\u0627": "On call", "\u0632\u064a\u0646": "Post call", "\u0628\u0634\u0631\u0649": "On call", "\u0647\u064a\u0627": "Post call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "27": {"dayOfWeek": "Tuesday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "A", "\u0645\u062e\u0637\u0648\u0628": "A", "\u0627\u0631\u064a\u062c": "Post call", "\u0639\u0644\u0627\u0621": "Post call", "\u0628\u0634\u0627\u0631": "A", "\u0643\u0631\u064a\u0645": "On call", "\u0628\u0631\u0627\u0621": "On call", "\u062f\u0627\u0644\u064a\u0646": "A", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "A", "\u0646\u0633\u0631\u064a\u0646": "Off", "\u062f\u064a\u0645\u0627": "Post call", "\u0632\u064a\u0646": "On call", "\u0628\u0634\u0631\u0649": "Post call", "\u0647\u064a\u0627": "On call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "28": {"dayOfWeek": "Wednesday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "A", "\u0627\u0631\u064a\u062c": "A", "\u0639\u0644\u0627\u0621": "A", "\u0628\u0634\u0627\u0631": "On call", "\u0643\u0631\u064a\u0645": "Post call", "\u0628\u0631\u0627\u0621": "Post call", "\u062f\u0627\u0644\u064a\u0646": "A", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "On call", "\u0646\u0633\u0631\u064a\u0646": "Off", "\u062f\u064a\u0645\u0627": "On call", "\u0632\u064a\u0646": "Post call", "\u0628\u0634\u0631\u0649": "On call", "\u0647\u064a\u0627": "Post call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "29": {"dayOfWeek": "Thursday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "On call", "\u0645\u062e\u0637\u0648\u0628": "On call", "\u0627\u0631\u064a\u062c": "A", "\u0639\u0644\u0627\u0621": "Off", "\u0628\u0634\u0627\u0631": "Post call", "\u0643\u0631\u064a\u0645": "On call", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "Post call", "\u0646\u0633\u0631\u064a\u0646": "A", "\u062f\u064a\u0645\u0627": "Post call", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "Post call", "\u0647\u064a\u0627": "On call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "30": {"dayOfWeek": "Friday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "Off", "\u0639\u0644\u0627\u0621": "On call", "\u0628\u0634\u0627\u0631": "On call", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "On call", "\u0646\u0633\u0631\u064a\u0646": "Off", "\u062f\u064a\u0645\u0627": "Off", "\u0632\u064a\u0646": "On call", "\u0628\u0634\u0631\u0649": "Off", "\u0647\u064a\u0627": "A", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "31": {"dayOfWeek": "Saturday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "On call", "\u0639\u0644\u0627\u0621": "Off", "\u0628\u0634\u0627\u0631": "Off", "\u0643\u0631\u064a\u0645": "On call", "\u0628\u0631\u0627\u0621": "On call", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "Off", "\u062f\u064a\u0645\u0627": "A", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "Off", "\u0647\u064a\u0627": "On call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}}, "statistics": {"\u0634\u0644\u0637\u0641": {"On call": 0, "Post call": 0, "Off": 15, "A": 16, "Other": 0}, "\u062f\u064a\u0646\u0627": {"On call": 0, "Post call": 0, "Off": 16, "A": 15, "Other": 0}, "\u0639\u0645\u0631": {"On call": 8, "Post call": 3, "Off": 12, "A": 8, "Other": 0}, "\u0645\u062e\u0637\u0648\u0628": {"On call": 7, "Post call": 2, "Off": 13, "A": 9, "Other": 0}, "\u0627\u0631\u064a\u062c": {"On call": 7, "Post call": 6, "Off": 10, "A": 8, "Other": 0}, "\u0639\u0644\u0627\u0621": {"On call": 9, "Post call": 5, "Off": 11, "A": 6, "Other": 0}, "\u0628\u0634\u0627\u0631": {"On call": 8, "Post call": 6, "Off": 10, "A": 7, "Other": 0}, "\u0643\u0631\u064a\u0645": {"On call": 10, "Post call": 4, "Off": 12, "A": 5, "Other": 0}, "\u0628\u0631\u0627\u0621": {"On call": 7, "Post call": 5, "Off": 12, "A": 7, "Other": 0}, "\u062f\u0627\u0644\u064a\u0646": {"On call": 7, "Post call": 5, "Off": 13, "A": 6, "Other": 0}, "\u062d\u0648\u0627\u0631\u062b": {"On call": 0, "Post call": 0, "Off": 19, "A": 12, "Other": 0}, "\u0641\u0637\u0627\u064a\u0631": {"On call": 10, "Post call": 6, "Off": 12, "A": 3, "Other": 0}, "\u0646\u0633\u0631\u064a\u0646": {"On call": 10, "Post call": 8, "Off": 10, "A": 3, "Other": 0}, "\u062f\u064a\u0645\u0627": {"On call": 9, "Post call": 9, "Off": 9, "A": 4, "Other": 0}, "\u0632\u064a\u0646": {"On call": 8, "Post call": 7, "Off": 12, "A": 4, "Other": 0}, "\u0628\u0634\u0631\u0649": {"On call": 10, "Post call": 8, "Off": 11, "A": 2, "Other": 0}, "\u0647\u064a\u0627": {"On call": 10, "Post call": 6, "Off": 13, "A": 2, "Other": 0}, "\u062a\u0645\u0627\u0636\u0631": {"On call": 0, "Post call": 0, "Off": 26, "A": 5, "Other": 0}, "\u062d\u0631\u0628": {"On call": 4, "Post call": 0, "Off": 27, "A": 0, "Other": 0}}};
+
+        // UI Initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // Handle Login
+            document.getElementById('login-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const pwd = document.getElementById('password-input').value;
+                if(pwd === 'PMC123') {
+                    document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('dashboard-screen').classList.remove('hidden');
+                    document.getElementById('dashboard-screen').classList.add('flex');
+                    initDashboard();
+                } else {
+                    document.getElementById('login-error').classList.remove('hidden');
+                }
+            });
+
+            // Handle Daily Lookup Input
+            document.getElementById('day-input').addEventListener('input', (e) => {
+                const day = e.target.value;
+                if(day >= 1 && day <= 31) {
+                    renderDailyRoster(day);
+                } else {
+                    clearDailyRoster();
+                }
+            });
+
+            // Handle Resident Lookup Input
+            document.getElementById('resident-input').addEventListener('input', (e) => {
+                const resName = e.target.value;
+                if(dashboardData.residents.includes(resName)) {
+                    renderResidentStats(resName);
+                } else {
+                    document.getElementById('resident-stats-container').classList.add('hidden');
+                    document.getElementById('resident-empty-state').classList.remove('hidden');
+                }
+            });
+        });
+
+        function logout() {
+            document.getElementById('password-input').value = '';
+            document.getElementById('login-error').classList.add('hidden');
+            document.getElementById('dashboard-screen').classList.add('hidden');
+            document.getElementById('dashboard-screen').classList.remove('flex');
+            document.getElementById('login-screen').classList.remove('hidden');
+        }
+
+        function initDashboard() {
+            // Populate Datalist for Searchable Dropdown
+            const listEl = document.getElementById('resident-list');
+            listEl.innerHTML = '';
+            dashboardData.residents.forEach(res => {
+                const option = document.createElement('option');
+                option.value = res;
+                listEl.appendChild(option);
+            });
+
+            // Initialize main statistics chart
+            renderChart();
+            
+            // Select Day 1 by default
+            document.getElementById('day-input').value = 1;
+            renderDailyRoster(1);
+        }
+
+        function clearDailyRoster() {
+            document.getElementById('display-day-name').textContent = "Invalid Day";
+            ['list-oncall', 'list-postcall', 'list-a', 'list-off'].forEach(id => {
+                document.getElementById(id).innerHTML = '';
+            });
+        }
+
+        function renderDailyRoster(day) {
+            const schedule = dashboardData.schedule[day];
+            if(!schedule) return;
+
+            document.getElementById('display-day-name').textContent = schedule.dayOfWeek + " (Oct " + day + ")";
+            
+            const groups = { "On call": [], "Post call": [], "A": [], "Off": [] };
+            for(const [res, status] of Object.entries(schedule.assignments)) {
+                if(groups[status]) groups[status].push(res);
+            }
+
+            const formatList = (arr) => arr.map(r => `<li>${r}</li>`).join('');
+            
+            document.getElementById('list-oncall').innerHTML = formatList(groups["On call"]);
+            document.getElementById('list-postcall').innerHTML = formatList(groups["Post call"]);
+            document.getElementById('list-a').innerHTML = formatList(groups["A"]);
+            document.getElementById('list-off').innerHTML = formatList(groups["Off"]);
+        }
+
+        function renderResidentStats(resName) {
+            document.getElementById('resident-empty-state').classList.add('hidden');
+            const container = document.getElementById('resident-stats-container');
+            container.classList.remove('hidden');
+            container.classList.add('flex');
+
+            const stats = dashboardData.statistics[resName];
+            document.getElementById('stat-oncall').textContent = stats['On call'];
+            document.getElementById('stat-postcall').textContent = stats['Post call'];
+            document.getElementById('stat-a').textContent = stats['A'];
+            document.getElementById('stat-off').textContent = stats['Off'];
+
+            const tableBody = document.getElementById('resident-schedule-table');
+            let tableHTML = '';
+            
+            for(let i=1; i<=31; i++) {
+                const s = dashboardData.schedule[i];
+                const status = s.assignments[resName];
+                
+                let badgeClass = "bg-emerald-100 text-emerald-800";
+                if(status === 'On call') badgeClass = "bg-red-100 text-red-800";
+                if(status === 'Post call') badgeClass = "bg-orange-100 text-orange-800";
+                if(status === 'A') badgeClass = "bg-blue-100 text-blue-800";
+
+                tableHTML += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-2 font-semibold">Oct ${i}</td>
+                        <td class="p-2 text-slate-500">${s.dayOfWeek.substring(0,3)}</td>
+                        <td class="p-2 text-right">
+                            <span class="px-2 py-1 rounded text-[10px] font-bold tracking-wide uppercase ${badgeClass}">${status}</span>
+                        </td>
+                    </tr>
+                `;
+            }
+            tableBody.innerHTML = tableHTML;
+        }
+
+        let mainChartInstance = null;
+        function renderChart() {
+            const ctx = document.getElementById('mainChart').getContext('2d');
+            
+            if(mainChartInstance) {
+                mainChartInstance.destroy();
+            }
+
+            const labels = dashboardData.residents;
+            const dataOnCall = labels.map(r => dashboardData.statistics[r]['On call']);
+            const dataPostCall = labels.map(r => dashboardData.statistics[r]['Post call']);
+            const dataA = labels.map(r => dashboardData.statistics[r]['A']);
+            const dataOff = labels.map(r => dashboardData.statistics[r]['Off']);
+
+            Chart.defaults.font.family = "'Inter', sans-serif";
+            
+            mainChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'On Call', data: dataOnCall, backgroundColor: '#ef4444', borderRadius: 4 },
+                        { label: 'Post Call', data: dataPostCall, backgroundColor: '#f97316', borderRadius: 4 },
+                        { label: 'A-Shift', data: dataA, backgroundColor: '#3b82f6', borderRadius: 4 },
+                        { label: 'Off', data: dataOff, backgroundColor: '#10b981', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true, grid: { display: false } },
+                        y: { stacked: true, border: { display: false } }
+                    },
+                    plugins: {
+                        legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } },
+                        tooltip: { mode: 'index', intersect: false }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
