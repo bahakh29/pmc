@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl" class="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title id="pageTitle">جدول المناوبات والدوام - قسم الباطني</title>
     
     <!-- Google Fonts: Cairo & Tajawal -->
@@ -47,14 +47,19 @@
         body {
             font-family: 'Cairo', sans-serif;
             background-color: #f8fafc;
+            -webkit-tap-highlight-color: transparent;
         }
         .dark body {
             background-color: #0f172a;
         }
         
+        /* Mobile Touch Scrolling Customization */
+        .custom-scrollbar {
+            -webkit-overflow-scrolling: touch;
+        }
         .custom-scrollbar::-webkit-scrollbar {
-            height: 8px;
-            width: 8px;
+            height: 5px;
+            width: 5px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
             background: #f1f5f9;
@@ -71,6 +76,7 @@
             background: #475569;
         }
 
+        /* Sticky Column Layout for Matrix */
         .sticky-col {
             position: sticky;
             z-index: 20;
@@ -102,81 +108,81 @@
 
 <!-- Header Container -->
 <header class="bg-gradient-to-r from-slate-900 via-brand-900 to-slate-900 text-white shadow-lg sticky top-0 z-30 border-b border-slate-700">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-4">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
             
-            <!-- Title & Subtitle -->
-            <div class="flex items-center gap-3 text-center md:text-start">
-                <div class="p-3 bg-brand-600/30 rounded-2xl border border-brand-500/30 text-brand-300">
-                    <i class="fa-solid fa-hospital-user text-2xl sm:text-3xl"></i>
+            <!-- Title & Hospital Name -->
+            <div class="flex items-center gap-2.5 sm:gap-3 text-center md:text-start w-full md:w-auto justify-center md:justify-start">
+                <div class="p-2.5 sm:p-3 bg-brand-600/30 rounded-2xl border border-brand-500/30 text-brand-300 shrink-0">
+                    <i class="fa-solid fa-hospital-user text-xl sm:text-2xl md:text-3xl"></i>
                 </div>
                 <div>
-                    <div class="flex items-center justify-center md:justify-start gap-2">
-                        <span id="ui-programBadge" class="text-xs sm:text-sm font-bold tracking-wide uppercase px-3 py-0.5 rounded-full bg-brand-500/20 text-brand-300 border border-brand-500/30">
+                    <div class="flex items-center justify-center md:justify-start gap-1.5 sm:gap-2 flex-wrap">
+                        <span id="ui-programBadge" class="text-[11px] sm:text-xs font-bold tracking-wide uppercase px-2 sm:px-2.5 py-0.5 rounded-full bg-brand-500/20 text-brand-300 border border-brand-500/30">
                             برنامج مقيمي الباطني
                         </span>
-                        <span id="ui-hospitalName" class="text-xs sm:text-sm text-slate-400">| مجمع فلسطين الطبي</span>
+                        <span id="ui-hospitalName" class="text-[11px] sm:text-xs text-slate-400 font-semibold">| مجمع فلسطين الطبي</span>
                     </div>
-                    <h1 id="ui-headerTitle" class="text-xl sm:text-2xl font-extrabold tracking-tight text-white mt-1">
+                    <h1 id="ui-headerTitle" class="text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight text-white mt-0.5">
                         جدول المناوبات والدوام
                     </h1>
                 </div>
             </div>
 
-            <!-- Action Controls -->
-            <div class="flex items-center gap-2 no-print">
-                <!-- Last Updated Timestamp Badge -->
-                <div id="lastUpdatedContainer" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800/90 text-slate-300 border border-slate-700 text-xs font-semibold shadow-inner">
+            <!-- Mobile-Friendly Action Controls -->
+            <div class="flex items-center justify-center md:justify-end gap-1.5 sm:gap-2 w-full md:w-auto flex-wrap no-print">
+                <!-- Last Updated Timestamp -->
+                <div id="lastUpdatedContainer" class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-800/90 text-slate-300 border border-slate-700 text-[11px] sm:text-xs font-semibold shadow-inner">
                     <i class="fa-regular fa-clock text-brand-400"></i>
                     <span id="lastUpdatedText">--:--</span>
                 </div>
 
                 <!-- Sync Sheet Button -->
-                <button onclick="fetchSheetData(true)" id="syncBtn" class="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-all text-xs sm:text-sm font-bold shadow-sm" title="تحديث البيانات">
-                    <i id="syncIcon" class="fa-solid fa-rotate text-sm"></i>
+                <button onclick="fetchSheetData(true)" id="syncBtn" class="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-all text-xs sm:text-sm font-bold shadow-sm active:scale-95" title="تحديث البيانات">
+                    <i id="syncIcon" class="fa-solid fa-rotate text-xs sm:text-sm"></i>
                     <span id="syncText">تحديث البيانات</span>
                 </button>
 
                 <!-- Language Toggle -->
-                <button id="langToggleBtn" onclick="toggleLanguage()" class="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-all text-xs sm:text-sm font-bold" title="تبديل اللغة / Switch Language">
-                    <i class="fa-solid fa-language text-base"></i>
+                <button id="langToggleBtn" onclick="toggleLanguage()" class="flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-all text-xs font-bold active:scale-95" title="تبديل اللغة / Switch Language">
+                    <i class="fa-solid fa-language text-sm"></i>
                     <span id="langBtnText">English</span>
                 </button>
 
                 <!-- Theme Toggle -->
-                <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-all" title="تبديل الوضع">
-                    <i id="themeIcon" class="fa-solid fa-moon text-lg"></i>
+                <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2 sm:p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-all active:scale-95" title="تبديل الوضع">
+                    <i id="themeIcon" class="fa-solid fa-moon text-base sm:text-lg"></i>
                 </button>
 
                 <!-- Export CSV -->
-                <button onclick="exportScheduleCSV()" class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm transition-all shadow-sm">
-                    <i class="fa-solid fa-file-csv text-base"></i>
+                <button onclick="exportScheduleCSV()" class="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm transition-all shadow-sm active:scale-95">
+                    <i class="fa-solid fa-file-csv text-sm"></i>
                     <span id="ui-btnExport" class="hidden sm:inline">تصدير Excel</span>
                 </button>
 
                 <!-- Print Schedule -->
-                <button onclick="window.print()" class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-medium text-sm transition-all border border-slate-600 shadow-sm">
-                    <i class="fa-solid fa-print text-base"></i>
-                    <span id="ui-btnPrint" class="hidden sm:inline">طباعة</span>
+                <button onclick="window.print()" class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs sm:text-sm transition-all border border-slate-600 shadow-sm active:scale-95">
+                    <i class="fa-solid fa-print text-sm"></i>
+                    <span id="ui-btnPrint">طباعة</span>
                 </button>
             </div>
         </div>
 
-        <!-- Navigation Tabs -->
-        <nav class="flex gap-2 overflow-x-auto custom-scrollbar mt-5 pt-2 border-t border-slate-800 no-print" id="mainTabs">
-            <button onclick="switchTab('analytics')" id="tab-analytics" class="tab-btn flex items-center gap-2 px-4 py-2.5 text-sm sm:text-base font-bold rounded-xl whitespace-nowrap transition-all bg-brand-600 text-white shadow">
+        <!-- Navigation Tabs (Horizontally Scrollable on Mobile) -->
+        <nav class="flex gap-1.5 sm:gap-2 overflow-x-auto custom-scrollbar mt-3 sm:mt-4 pt-2 border-t border-slate-800 no-print" id="mainTabs">
+            <button onclick="switchTab('analytics')" id="tab-analytics" class="tab-btn flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm md:text-base font-bold rounded-xl whitespace-nowrap transition-all bg-brand-600 text-white shadow">
                 <i class="fa-solid fa-chart-pie"></i>
                 <span id="ui-tabAnalytics">📊 الملخص</span>
             </button>
-            <button onclick="switchTab('matrix')" id="tab-matrix" class="tab-btn flex items-center gap-2 px-4 py-2.5 text-sm sm:text-base font-bold rounded-xl whitespace-nowrap transition-all text-slate-300 hover:bg-slate-800 hover:text-white">
+            <button onclick="switchTab('matrix')" id="tab-matrix" class="tab-btn flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm md:text-base font-bold rounded-xl whitespace-nowrap transition-all text-slate-300 hover:bg-slate-800 hover:text-white">
                 <i class="fa-solid fa-calendar-days"></i>
                 <span id="ui-tabMatrix">🗓️ الجدول الشامل للشهر</span>
             </button>
-            <button onclick="switchTab('resident')" id="tab-resident" class="tab-btn flex items-center gap-2 px-4 py-2.5 text-sm sm:text-base font-bold rounded-xl whitespace-nowrap transition-all text-slate-300 hover:bg-slate-800 hover:text-white">
+            <button onclick="switchTab('resident')" id="tab-resident" class="tab-btn flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm md:text-base font-bold rounded-xl whitespace-nowrap transition-all text-slate-300 hover:bg-slate-800 hover:text-white">
                 <i class="fa-solid fa-user-doctor"></i>
                 <span id="ui-tabResident">👤 جدول الطبيب المقيم</span>
             </button>
-            <button onclick="switchTab('daily')" id="tab-daily" class="tab-btn flex items-center gap-2 px-4 py-2.5 text-sm sm:text-base font-bold rounded-xl whitespace-nowrap transition-all text-slate-300 hover:bg-slate-800 hover:text-white">
+            <button onclick="switchTab('daily')" id="tab-daily" class="tab-btn flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm md:text-base font-bold rounded-xl whitespace-nowrap transition-all text-slate-300 hover:bg-slate-800 hover:text-white">
                 <i class="fa-solid fa-clock"></i>
                 <span id="ui-tabDaily">📅 التوزيع اليومي للدوام</span>
             </button>
@@ -185,12 +191,12 @@
 </header>
 
 <!-- Main Container -->
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+<main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
 
 <!-- KPI Cards Section -->
-<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-4">
-        <div class="p-3.5 bg-brand-50 dark:bg-brand-950/50 text-brand-600 dark:text-brand-400 rounded-2xl text-3xl">
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-3.5">
+        <div class="p-3 sm:p-3.5 bg-brand-50 dark:bg-brand-950/50 text-brand-600 dark:text-brand-400 rounded-2xl text-2xl sm:text-3xl shrink-0">
             <i class="fa-solid fa-users-medical"></i>
         </div>
         <div>
@@ -201,36 +207,36 @@
 </section>
 
 <!-- TAB 1: EXECUTIVE ANALYTICS -->
-<div id="view-analytics" class="tab-content space-y-6">
-    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-        <div class="flex items-center justify-between mb-4">
-            <h3 id="ui-chartTitle" class="font-black text-xl text-slate-900 dark:text-white flex items-center gap-2">
+<div id="view-analytics" class="tab-content space-y-4 sm:space-y-6">
+    <div class="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div class="flex items-center justify-between mb-3 sm:mb-4">
+            <h3 id="ui-chartTitle" class="font-black text-base sm:text-xl text-slate-900 dark:text-white flex items-center gap-2">
                 <i class="fa-solid fa-chart-column text-rose-500"></i>
                 توزيع عدد المناوبات لكل طبيب
             </h3>
         </div>
-        <div class="h-80">
+        <div class="h-64 sm:h-80">
             <canvas id="onCallChart"></canvas>
         </div>
     </div>
 
     <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-        <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-            <h3 id="ui-summaryTableTitle" class="font-black text-xl text-slate-900 dark:text-white flex items-center gap-2">
+        <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+            <h3 id="ui-summaryTableTitle" class="font-black text-base sm:text-xl text-slate-900 dark:text-white flex items-center gap-2">
                 <i class="fa-solid fa-list-check text-indigo-500"></i>
                 ملخص دوام المقيمين
             </h3>
         </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-start text-base">
-                <thead class="bg-slate-50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 text-sm sm:text-base">
+        <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-start text-xs sm:text-base">
+                <thead class="bg-slate-50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 text-xs sm:text-base">
                     <tr>
-                        <th class="p-4 font-extrabold">#</th>
-                        <th id="ui-thDocName" class="p-4 font-extrabold">اسم الطبيب المقيم</th>
-                        <th id="ui-thOnCall" class="p-4 font-extrabold text-center">المناوبات (On Call)</th>
-                        <th id="ui-thPostCall" class="p-4 font-extrabold text-center">بعد المناوبة (Post Call)</th>
-                        <th id="ui-thDutyA" class="p-4 font-extrabold text-center">A</th>
-                        <th id="ui-thOff" class="p-4 font-extrabold text-center">أيام العطلة (Off)</th>
+                        <th class="p-2.5 sm:p-4 font-extrabold">#</th>
+                        <th id="ui-thDocName" class="p-2.5 sm:p-4 font-extrabold whitespace-nowrap">اسم الطبيب المقيم</th>
+                        <th id="ui-thOnCall" class="p-2.5 sm:p-4 font-extrabold text-center whitespace-nowrap">المناوبات (On Call)</th>
+                        <th id="ui-thPostCall" class="p-2.5 sm:p-4 font-extrabold text-center whitespace-nowrap">بعد المناوبة (Post Call)</th>
+                        <th id="ui-thDutyA" class="p-2.5 sm:p-4 font-extrabold text-center whitespace-nowrap">A</th>
+                        <th id="ui-thOff" class="p-2.5 sm:p-4 font-extrabold text-center whitespace-nowrap">أيام العطلة (Off)</th>
                     </tr>
                 </thead>
                 <tbody id="analyticsTableBody" class="divide-y divide-slate-200 dark:divide-slate-700">
@@ -243,26 +249,26 @@
 
 <!-- TAB 2: MASTER SCHEDULE MATRIX -->
 <div id="view-matrix" class="tab-content hidden space-y-4">
-    <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
         <div class="relative w-full md:w-80">
-            <i class="fa-solid fa-magnifying-glass absolute rtl:right-3.5 ltr:left-3.5 top-3.5 text-slate-400 text-base"></i>
+            <i class="fa-solid fa-magnifying-glass absolute rtl:right-3.5 ltr:left-3.5 top-3.5 text-slate-400 text-sm sm:text-base"></i>
             <input type="text" id="doctorSearchInput" oninput="renderMatrixTable()" placeholder="بحث باسم الطبيب..." 
-                class="w-full rtl:pr-10 rtl:pl-3 ltr:pl-10 ltr:pr-3 py-2.5 text-base bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all">
+                class="w-full rtl:pr-10 rtl:pl-3 ltr:pl-10 ltr:pr-3 py-2 sm:py-2.5 text-sm sm:text-base bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all">
         </div>
 
-        <div class="flex flex-wrap items-center gap-2 text-sm w-full md:w-auto justify-start md:justify-end">
-            <span id="ui-filterLabel" class="font-extrabold text-slate-600 dark:text-slate-300 mx-1">تصفية:</span>
-            <button onclick="filterMatrixShift('ALL')" id="btn-filter-ALL" class="px-3.5 py-2 rounded-xl border font-bold transition-all bg-brand-600 text-white border-brand-600">الكل</button>
-            <button onclick="filterMatrixShift('On call')" id="btn-filter-Oncall" class="px-3.5 py-2 rounded-xl border font-bold transition-all bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800">مناوبة</button>
-            <button onclick="filterMatrixShift('Post call')" id="btn-filter-Postcall" class="px-3.5 py-2 rounded-xl border font-bold transition-all bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">بعد المناوبة</button>
-            <button onclick="filterMatrixShift('A')" id="btn-filter-A" class="px-3.5 py-2 rounded-xl border font-bold transition-all bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800">A</button>
-            <button onclick="filterMatrixShift('Off')" id="btn-filter-Off" class="px-3.5 py-2 rounded-xl border font-bold transition-all bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">عطلة Off</button>
+        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs sm:text-sm w-full md:w-auto justify-start md:justify-end">
+            <span id="ui-filterLabel" class="font-extrabold text-slate-600 dark:text-slate-300 mx-0.5">تصفية:</span>
+            <button onclick="filterMatrixShift('ALL')" id="btn-filter-ALL" class="px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl border font-bold transition-all bg-brand-600 text-white border-brand-600">الكل</button>
+            <button onclick="filterMatrixShift('On call')" id="btn-filter-Oncall" class="px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl border font-bold transition-all bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800">مناوبة</button>
+            <button onclick="filterMatrixShift('Post call')" id="btn-filter-Postcall" class="px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl border font-bold transition-all bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">بعد المناوبة</button>
+            <button onclick="filterMatrixShift('A')" id="btn-filter-A" class="px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl border font-bold transition-all bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800">A</button>
+            <button onclick="filterMatrixShift('Off')" id="btn-filter-Off" class="px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl border font-bold transition-all bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">عطلة Off</button>
         </div>
     </div>
 
     <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
         <div class="overflow-x-auto custom-scrollbar max-h-[650px]">
-            <table class="w-full text-start text-sm border-collapse">
+            <table class="w-full text-start text-xs border-collapse">
                 <thead class="bg-slate-900 text-white sticky top-0 z-30 shadow">
                     <tr id="matrixHeaderRow">
                         <!-- Populated by JS -->
@@ -276,122 +282,122 @@
     </div>
 </div>
 
-<!-- TAB 3: INDIVIDUAL RESIDENT ROSTER (ENLARGED FONTS) -->
-<div id="view-resident" class="tab-content hidden space-y-6">
+<!-- TAB 3: INDIVIDUAL RESIDENT ROSTER (OPTIMIZED MOBILE RESPONSIVENESS) -->
+<div id="view-resident" class="tab-content hidden space-y-4 sm:space-y-6">
     <!-- Resident Selection Header -->
-    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
-        <div class="flex items-center gap-4 w-full md:w-auto">
-            <div class="p-4 bg-brand-500/10 text-brand-600 dark:text-brand-400 rounded-2xl text-3xl">
+    <div class="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
+        <div class="flex items-center gap-3 sm:gap-4 w-full md:w-auto">
+            <div class="p-3 sm:p-4 bg-brand-500/10 text-brand-600 dark:text-brand-400 rounded-2xl text-2xl sm:text-3xl shrink-0">
                 <i class="fa-solid fa-user-doctor"></i>
             </div>
             <div class="w-full md:w-auto">
-                <label id="ui-labelSelectDoc" for="residentSelect" class="block text-sm sm:text-base font-bold text-slate-600 dark:text-slate-300 mb-1">اختر الطبيب المقيم:</label>
+                <label id="ui-labelSelectDoc" for="residentSelect" class="block text-xs sm:text-sm md:text-base font-bold text-slate-600 dark:text-slate-300 mb-1">اختر الطبيب المقيم:</label>
                 <select id="residentSelect" onchange="renderIndividualRoster()" 
-                    class="block w-full md:w-72 py-3 px-4 border-2 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl text-lg sm:text-xl font-black focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all shadow-sm">
+                    class="block w-full md:w-72 py-2.5 px-3 sm:py-3 sm:px-4 border-2 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl text-base sm:text-lg md:text-xl font-black focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all shadow-sm">
                     <!-- Populated by JS -->
                 </select>
             </div>
         </div>
 
         <!-- Resident Duty Counts Summary Badges -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full md:w-auto text-center" id="residentStatsSummary">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 w-full md:w-auto text-center" id="residentStatsSummary">
             <!-- Populated by JS -->
         </div>
     </div>
 
     <!-- Calendar View for Selected Doctor -->
-    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-6">
-            <h3 id="ui-calendarTitle" class="font-black text-xl sm:text-2xl text-slate-900 dark:text-white flex items-center gap-3">
-                <i class="fa-regular fa-calendar-days text-brand-500 text-2xl"></i>
+    <div class="bg-white dark:bg-slate-800 p-3 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div class="flex flex-row items-center justify-between gap-2 mb-4 sm:mb-6">
+            <h3 id="ui-calendarTitle" class="font-black text-base sm:text-xl md:text-2xl text-slate-900 dark:text-white flex items-center gap-2 sm:gap-3">
+                <i class="fa-regular fa-calendar-days text-brand-500 text-lg sm:text-2xl"></i>
                 التقويم الشهري الشخصي
             </h3>
-            <span class="text-lg sm:text-xl font-black text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/50 px-4 py-1.5 rounded-xl border border-brand-200 dark:border-brand-800" id="selectedDoctorNameDisplay">شلطف</span>
+            <span class="text-sm sm:text-lg md:text-xl font-black text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/50 px-3 py-1 sm:px-4 sm:py-1.5 rounded-xl border border-brand-200 dark:border-brand-800" id="selectedDoctorNameDisplay">شلطف</span>
         </div>
 
         <!-- Calendar Days Header -->
-        <div id="calendarWeekdayHeaders" class="grid grid-cols-7 gap-2 text-center font-black text-sm sm:text-base bg-slate-100 dark:bg-slate-900 p-3 rounded-xl mb-3 text-slate-700 dark:text-slate-300 shadow-inner">
+        <div id="calendarWeekdayHeaders" class="grid grid-cols-7 gap-1 sm:gap-2 text-center font-black text-[11px] sm:text-sm md:text-base bg-slate-100 dark:bg-slate-900 p-2 sm:p-3 rounded-xl mb-2 sm:mb-3 text-slate-700 dark:text-slate-300 shadow-inner">
             <!-- Populated via JS -->
         </div>
 
-        <!-- Calendar Days Grid -->
-        <div id="residentCalendarGrid" class="grid grid-cols-7 gap-2 sm:gap-2.5">
+        <!-- Mobile-Adaptive Calendar Days Grid -->
+        <div id="residentCalendarGrid" class="grid grid-cols-7 gap-1 sm:gap-2 md:gap-2.5">
             <!-- Populated via JS -->
         </div>
     </div>
 </div>
 
 <!-- TAB 4: DAILY SHIFT BREAKDOWN -->
-<div id="view-daily" class="tab-content hidden space-y-6">
-    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+<div id="view-daily" class="tab-content hidden space-y-4 sm:space-y-6">
+    <div class="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
         <div class="flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-3">
-                <div class="p-3.5 bg-brand-600 text-white rounded-2xl shadow-md text-2xl">
+                <div class="p-3 sm:p-3.5 bg-brand-600 text-white rounded-2xl shadow-md text-xl sm:text-2xl shrink-0">
                     <i class="fa-regular fa-calendar-check"></i>
                 </div>
                 <div>
                     <span id="ui-dailySubtitle" class="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400">استعراض تفاصيل اليوم</span>
-                    <h3 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white" id="selectedDayTitle">الخميس، 1</h3>
+                    <h3 class="text-lg sm:text-xl md:text-2xl font-black text-slate-900 dark:text-white" id="selectedDayTitle">الخميس، 1</h3>
                 </div>
             </div>
 
             <div class="flex items-center gap-2 w-full md:w-auto">
-                <label id="ui-labelSelectDay" for="daySelect" class="text-base font-extrabold text-slate-700 dark:text-slate-200 whitespace-nowrap">حدد اليوم:</label>
-                <select id="daySelect" onchange="renderDailyBreakdown()" class="w-full md:w-56 py-2.5 px-3.5 border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl text-base font-extrabold focus:ring-2 focus:ring-brand-500">
+                <label id="ui-labelSelectDay" for="daySelect" class="text-sm sm:text-base font-extrabold text-slate-700 dark:text-slate-200 whitespace-nowrap">حدد اليوم:</label>
+                <select id="daySelect" onchange="renderDailyBreakdown()" class="w-full md:w-56 py-2 sm:py-2.5 px-3 border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl text-sm sm:text-base font-extrabold focus:ring-2 focus:ring-brand-500">
                     <!-- Populated by JS -->
                 </select>
             </div>
         </div>
 
-        <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar pt-4 mt-4 border-t border-slate-200 dark:border-slate-700" id="dayQuickPickerButtons">
+        <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto custom-scrollbar pt-3 sm:pt-4 mt-3 sm:mt-4 border-t border-slate-200 dark:border-slate-700" id="dayQuickPickerButtons">
             <!-- Populated by JS -->
         </div>
     </div>
 
     <!-- 4 Duty Columns -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         <div class="bg-white dark:bg-slate-800 rounded-2xl border border-rose-200 dark:border-rose-900/60 shadow-sm overflow-hidden">
-            <div class="bg-rose-500 text-white p-4 flex items-center justify-between">
+            <div class="bg-rose-500 text-white p-3.5 sm:p-4 flex items-center justify-between">
                 <div class="flex items-center gap-2 font-black text-base sm:text-lg">
                     <i class="fa-solid fa-bell"></i>
                     <span id="ui-cardTitleOnCall">مناوبة (On Call)</span>
                 </div>
-                <span id="daily-count-oncall" class="px-3 py-0.5 rounded-full bg-white/20 text-sm font-black">0</span>
+                <span id="daily-count-oncall" class="px-2.5 py-0.5 rounded-full bg-white/20 text-xs sm:text-sm font-black">0</span>
             </div>
-            <div class="p-4 space-y-3 min-h-[220px]" id="daily-list-oncall"></div>
+            <div class="p-3.5 sm:p-4 space-y-2.5 sm:space-y-3 min-h-[180px] sm:min-h-[220px]" id="daily-list-oncall"></div>
         </div>
 
         <div class="bg-white dark:bg-slate-800 rounded-2xl border border-amber-200 dark:border-amber-900/60 shadow-sm overflow-hidden">
-            <div class="bg-amber-500 text-white p-4 flex items-center justify-between">
+            <div class="bg-amber-500 text-white p-3.5 sm:p-4 flex items-center justify-between">
                 <div class="flex items-center gap-2 font-black text-base sm:text-lg">
                     <i class="fa-solid fa-bed"></i>
                     <span id="ui-cardTitlePostCall">بعد المناوبة (Post Call)</span>
                 </div>
-                <span id="daily-count-postcall" class="px-3 py-0.5 rounded-full bg-white/20 text-sm font-black">0</span>
+                <span id="daily-count-postcall" class="px-2.5 py-0.5 rounded-full bg-white/20 text-xs sm:text-sm font-black">0</span>
             </div>
-            <div class="p-4 space-y-3 min-h-[220px]" id="daily-list-postcall"></div>
+            <div class="p-3.5 sm:p-4 space-y-2.5 sm:space-y-3 min-h-[180px] sm:min-h-[220px]" id="daily-list-postcall"></div>
         </div>
 
         <div class="bg-white dark:bg-slate-800 rounded-2xl border border-indigo-200 dark:border-indigo-900/60 shadow-sm overflow-hidden">
-            <div class="bg-indigo-600 text-white p-4 flex items-center justify-between">
+            <div class="bg-indigo-600 text-white p-3.5 sm:p-4 flex items-center justify-between">
                 <div class="flex items-center gap-2 font-black text-base sm:text-lg">
                     <i class="fa-solid fa-user-gear"></i>
                     <span id="ui-cardTitleDutyA">A</span>
                 </div>
-                <span id="daily-count-duty" class="px-3 py-0.5 rounded-full bg-white/20 text-sm font-black">0</span>
+                <span id="daily-count-duty" class="px-2.5 py-0.5 rounded-full bg-white/20 text-xs sm:text-sm font-black">0</span>
             </div>
-            <div class="p-4 space-y-3 min-h-[220px]" id="daily-list-duty"></div>
+            <div class="p-3.5 sm:p-4 space-y-2.5 sm:space-y-3 min-h-[180px] sm:min-h-[220px]" id="daily-list-duty"></div>
         </div>
 
         <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-            <div class="bg-slate-600 text-white p-4 flex items-center justify-between">
+            <div class="bg-slate-600 text-white p-3.5 sm:p-4 flex items-center justify-between">
                 <div class="flex items-center gap-2 font-black text-base sm:text-lg">
                     <i class="fa-solid fa-mug-hot"></i>
                     <span id="ui-cardTitleOff">عطلة (Off)</span>
                 </div>
-                <span id="daily-count-off" class="px-3 py-0.5 rounded-full bg-white/20 text-sm font-black">0</span>
+                <span id="daily-count-off" class="px-2.5 py-0.5 rounded-full bg-white/20 text-xs sm:text-sm font-black">0</span>
             </div>
-            <div class="p-4 space-y-3 min-h-[220px]" id="daily-list-off"></div>
+            <div class="p-3.5 sm:p-4 space-y-2.5 sm:space-y-3 min-h-[180px] sm:min-h-[220px]" id="daily-list-off"></div>
         </div>
     </div>
 </div>
@@ -402,7 +408,7 @@
 /**
  * GOOGLE SHEETS SYNC CONFIGURATION
  */
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyxY72HPcwO8PSVCr1aBCkqrBXafKUmKRBq-4QTovbsA9zFtJg9FYSkhsXQdLvejxylPQ/exec"; 
+const WEB_APP_URL = ""; 
 
 let RESIDENTS = [
     "شلطف", "دينا", "عمر", "مخطوب", "اريج", "علاء", "بشار", "كريم", 
@@ -471,7 +477,7 @@ const TRANSLATIONS = {
         btnExport: "تصدير Excel",
         btnPrint: "طباعة",
         langBtn: "English",
-        tabAnalytics: "📊 التحليلات",
+        tabAnalytics: "📊 الملخص",
         tabMatrix: "🗓️ الجدول الشامل للشهر",
         tabResident: "👤 جدول الطبيب المقيم",
         tabDaily: "📅 التوزيع اليومي للدوام",
@@ -599,7 +605,7 @@ window.addEventListener('DOMContentLoaded', () => {
     fetchSheetData(false);
 });
 
-// Render Last Updated Timestamp (Hour:minute format)
+// Render Last Updated Timestamp
 function renderLastUpdated() {
     const el = document.getElementById('lastUpdatedText');
     if (!el || !lastUpdatedTime) return;
@@ -618,7 +624,6 @@ function fetchSheetData(isManualTrigger) {
     const syncIcon = document.getElementById('syncIcon');
     if (syncIcon) syncIcon.classList.add('fa-spin');
 
-    // Apps Script Container Environment Check
     if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
             .withSuccessHandler(onSheetDataLoaded)
@@ -627,7 +632,6 @@ function fetchSheetData(isManualTrigger) {
         return;
     }
 
-    // External Fetch via Deployed Web App URL
     if (WEB_APP_URL) {
         fetch(WEB_APP_URL + '?action=getData')
             .then(res => res.json())
@@ -713,7 +717,7 @@ function toggleLanguage() {
     document.getElementById('btn-filter-Off').innerText = t.filterOff;
 
     document.getElementById('ui-labelSelectDoc').innerText = t.labelSelectDoc;
-    document.getElementById('ui-calendarTitle').innerHTML = `<i class="fa-regular fa-calendar-days text-brand-500 text-2xl"></i> ${t.calendarTitle}`;
+    document.getElementById('ui-calendarTitle').innerHTML = `<i class="fa-regular fa-calendar-days text-brand-500 text-lg sm:text-2xl"></i> ${t.calendarTitle}`;
 
     document.getElementById('ui-dailySubtitle').innerText = t.dailySubtitle;
     document.getElementById('ui-labelSelectDay').innerText = t.labelSelectDay;
@@ -736,10 +740,10 @@ function toggleTheme() {
     const themeIcon = document.getElementById('themeIcon');
     if (htmlEl.classList.contains('dark')) {
         htmlEl.classList.remove('dark');
-        themeIcon.className = 'fa-solid fa-moon text-lg';
+        themeIcon.className = 'fa-solid fa-moon text-base sm:text-lg';
     } else {
         htmlEl.classList.add('dark');
-        themeIcon.className = 'fa-solid fa-sun text-lg';
+        themeIcon.className = 'fa-solid fa-sun text-base sm:text-lg';
     }
 }
 
@@ -816,7 +820,7 @@ function initDaySelects() {
             renderDailyBreakdown();
         };
         btn.id = `quick-day-btn-${d.dayNum}`;
-        btn.className = `px-3 py-1.5 text-xs sm:text-sm font-bold rounded-xl whitespace-nowrap transition-all border ${
+        btn.className = `px-2.5 py-1.5 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-bold rounded-xl whitespace-nowrap transition-all border ${
             d.isWeekend 
             ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-900' 
             : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-800'
@@ -841,12 +845,12 @@ function renderAnalyticsView() {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors';
         tr.innerHTML = `
-            <td class="p-4 text-slate-400 font-mono text-sm sm:text-base font-bold">${idx + 1}</td>
-            <td class="p-4 font-extrabold text-base sm:text-lg text-slate-900 dark:text-white">${d.name}</td>
-            <td class="p-4 text-center font-black text-base sm:text-lg text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/20">${d.onCall}</td>
-            <td class="p-4 text-center font-black text-base sm:text-lg text-amber-600 dark:text-amber-400">${d.postCall}</td>
-            <td class="p-4 text-center font-black text-base sm:text-lg text-indigo-600 dark:text-indigo-400">${d.dutyA}</td>
-            <td class="p-4 text-center font-black text-base sm:text-lg text-slate-600 dark:text-slate-400">${d.off}</td>
+            <td class="p-2.5 sm:p-4 text-slate-400 font-mono text-xs sm:text-base font-bold">${idx + 1}</td>
+            <td class="p-2.5 sm:p-4 font-extrabold text-xs sm:text-lg text-slate-900 dark:text-white whitespace-nowrap">${d.name}</td>
+            <td class="p-2.5 sm:p-4 text-center font-black text-xs sm:text-lg text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/20">${d.onCall}</td>
+            <td class="p-2.5 sm:p-4 text-center font-black text-xs sm:text-lg text-amber-600 dark:text-amber-400">${d.postCall}</td>
+            <td class="p-2.5 sm:p-4 text-center font-black text-xs sm:text-lg text-indigo-600 dark:text-indigo-400">${d.dutyA}</td>
+            <td class="p-2.5 sm:p-4 text-center font-black text-xs sm:text-lg text-slate-600 dark:text-slate-400">${d.off}</td>
         `;
         tbody.appendChild(tr);
     });
@@ -887,11 +891,11 @@ function renderAnalyticsCharts() {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { position: 'top', labels: { font: { family: 'Cairo', size: 13, weight: 'bold' } } }
+                legend: { position: 'top', labels: { font: { family: 'Cairo', size: 11, weight: 'bold' } } }
             },
             scales: {
-                x: { ticks: { font: { family: 'Cairo', size: 12, weight: 'bold' } } },
-                y: { beginAtZero: true, ticks: { precision: 0, font: { size: 12 } } }
+                x: { ticks: { font: { family: 'Cairo', size: 10, weight: 'bold' } } },
+                y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } }
             }
         }
     });
@@ -922,10 +926,10 @@ function renderMatrixTable() {
     const isAr = currentLang === 'ar';
 
     headerRow.innerHTML = `
-        <th class="p-3 sticky-col bg-slate-900 text-white font-extrabold text-sm sm:text-base w-40 border-b border-slate-700 text-start shadow-md">
+        <th class="p-2 sm:p-3 sticky-col bg-slate-900 text-white font-extrabold text-xs sm:text-base min-w-[100px] sm:w-40 border-b border-slate-700 text-start shadow-md">
             ${t.thMatrixDoc}
         </th>
-        <th class="p-2 font-black text-center text-sm border-b border-slate-700 bg-slate-800 text-rose-300 w-12">
+        <th class="p-1.5 sm:p-2 font-black text-center text-xs sm:text-sm border-b border-slate-700 bg-slate-800 text-rose-300 w-10 sm:w-12">
             ${t.thMatrixOC}
         </th>
     `;
@@ -933,12 +937,12 @@ function renderMatrixTable() {
     OCT_2026_DAYS.forEach(d => {
         const dayName = isAr ? d.weekdayAR : d.weekdayENShort;
         const th = document.createElement('th');
-        th.className = `p-2 text-center border-b border-slate-700 whitespace-nowrap min-w-[55px] ${
+        th.className = `p-1.5 sm:p-2 text-center border-b border-slate-700 whitespace-nowrap min-w-[42px] sm:min-w-[55px] ${
             d.isWeekend ? 'bg-slate-800 text-rose-400 font-extrabold' : 'bg-slate-900 text-slate-200'
         }`;
         th.innerHTML = `
-            <div class="text-[11px] font-semibold opacity-80">${dayName}</div>
-            <div class="text-sm sm:text-base font-black">${d.dayNum}</div>
+            <div class="text-[9px] sm:text-[11px] font-semibold opacity-80">${dayName}</div>
+            <div class="text-xs sm:text-base font-black">${d.dayNum}</div>
         `;
         headerRow.appendChild(th);
     });
@@ -952,10 +956,10 @@ function renderMatrixTable() {
         tr.className = 'hover:bg-slate-100 dark:hover:bg-slate-700/40 transition-colors';
 
         let html = `
-            <td class="p-3 font-extrabold text-sm sm:text-base text-slate-900 dark:text-white sticky-col bg-white dark:bg-slate-800 border-l border-r border-slate-200 dark:border-slate-700 shadow-sm">
+            <td class="p-2 sm:p-3 font-extrabold text-xs sm:text-base text-slate-900 dark:text-white sticky-col bg-white dark:bg-slate-800 border-l border-r border-slate-200 dark:border-slate-700 shadow-sm whitespace-nowrap">
                 ${doc}
             </td>
-            <td class="p-2 text-center font-black text-sm sm:text-base text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/30 border-l border-r border-slate-200 dark:border-slate-700">
+            <td class="p-1.5 sm:p-2 text-center font-black text-xs sm:text-base text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/30 border-l border-r border-slate-200 dark:border-slate-700">
                 ${stats.onCall}
             </td>
         `;
@@ -982,8 +986,8 @@ function renderMatrixTable() {
             const isDimmed = (activeMatrixFilter !== 'ALL' && shift !== activeMatrixFilter);
 
             html += `
-                <td class="p-1 text-center border-l border-r border-slate-100 dark:border-slate-800 ${isDimmed ? 'opacity-20' : ''}">
-                    <span class="inline-block w-full py-1.5 px-1 rounded-md text-xs font-bold transition-all ${badgeStyle}">
+                <td class="p-0.5 sm:p-1 text-center border-l border-r border-slate-100 dark:border-slate-800 ${isDimmed ? 'opacity-20' : ''}">
+                    <span class="inline-block w-full py-1 px-0.5 rounded text-[10px] sm:text-xs font-bold transition-all ${badgeStyle}">
                         ${labelText}
                     </span>
                 </td>
@@ -995,6 +999,7 @@ function renderMatrixTable() {
     });
 }
 
+// TAB 3: RESIDENT SCHEDULE (MOBILE RESPONSIVE & ENLARGED)
 function renderIndividualRoster() {
     const selectedDoc = document.getElementById('residentSelect').value || RESIDENTS[0];
     document.getElementById('selectedDoctorNameDisplay').innerText = selectedDoc;
@@ -1003,23 +1008,24 @@ function renderIndividualRoster() {
     const t = TRANSLATIONS[currentLang];
     const isAr = currentLang === 'ar';
 
+    // Summary Badges
     const statsContainer = document.getElementById('residentStatsSummary');
     statsContainer.innerHTML = `
-        <div class="bg-rose-50 dark:bg-rose-950/50 p-3.5 sm:p-4 rounded-2xl border border-rose-200 dark:border-rose-900 shadow-sm">
-            <span class="text-xs sm:text-sm font-extrabold text-rose-600 dark:text-rose-400 block">${t.statOnCall}</span>
-            <span class="text-2xl sm:text-3xl font-black text-rose-700 dark:text-rose-300 mt-1 block">${stats.onCall}</span>
+        <div class="bg-rose-50 dark:bg-rose-950/50 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl border border-rose-200 dark:border-rose-900 shadow-sm">
+            <span class="text-[11px] sm:text-sm font-extrabold text-rose-600 dark:text-rose-400 block">${t.statOnCall}</span>
+            <span class="text-xl sm:text-3xl font-black text-rose-700 dark:text-rose-300 mt-0.5 sm:mt-1 block">${stats.onCall}</span>
         </div>
-        <div class="bg-amber-50 dark:bg-amber-950/50 p-3.5 sm:p-4 rounded-2xl border border-amber-200 dark:border-amber-900 shadow-sm">
-            <span class="text-xs sm:text-sm font-extrabold text-amber-600 dark:text-amber-400 block">${t.statPostCall}</span>
-            <span class="text-2xl sm:text-3xl font-black text-amber-700 dark:text-amber-300 mt-1 block">${stats.postCall}</span>
+        <div class="bg-amber-50 dark:bg-amber-950/50 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl border border-amber-200 dark:border-amber-900 shadow-sm">
+            <span class="text-[11px] sm:text-sm font-extrabold text-amber-600 dark:text-amber-400 block">${t.statPostCall}</span>
+            <span class="text-xl sm:text-3xl font-black text-amber-700 dark:text-amber-300 mt-0.5 sm:mt-1 block">${stats.postCall}</span>
         </div>
-        <div class="bg-indigo-50 dark:bg-indigo-950/50 p-3.5 sm:p-4 rounded-2xl border border-indigo-200 dark:border-indigo-900 shadow-sm">
-            <span class="text-xs sm:text-sm font-extrabold text-indigo-600 dark:text-indigo-400 block">${t.statA}</span>
-            <span class="text-2xl sm:text-3xl font-black text-indigo-700 dark:text-indigo-300 mt-1 block">${stats.dutyA}</span>
+        <div class="bg-indigo-50 dark:bg-indigo-950/50 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl border border-indigo-200 dark:border-indigo-900 shadow-sm">
+            <span class="text-[11px] sm:text-sm font-extrabold text-indigo-600 dark:text-indigo-400 block">${t.statA}</span>
+            <span class="text-xl sm:text-3xl font-black text-indigo-700 dark:text-indigo-300 mt-0.5 sm:mt-1 block">${stats.dutyA}</span>
         </div>
-        <div class="bg-slate-100 dark:bg-slate-800 p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-            <span class="text-xs sm:text-sm font-extrabold text-slate-600 dark:text-slate-400 block">${t.statOff}</span>
-            <span class="text-2xl sm:text-3xl font-black text-slate-800 dark:text-slate-200 mt-1 block">${stats.off}</span>
+        <div class="bg-slate-100 dark:bg-slate-800 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+            <span class="text-[11px] sm:text-sm font-extrabold text-slate-600 dark:text-slate-400 block">${t.statOff}</span>
+            <span class="text-xl sm:text-3xl font-black text-slate-800 dark:text-slate-200 mt-0.5 sm:mt-1 block">${stats.off}</span>
         </div>
     `;
 
@@ -1029,12 +1035,13 @@ function renderIndividualRoster() {
         <div class="${idx === 5 ? 'text-rose-500' : idx === 6 ? 'text-indigo-500' : ''}">${wd}</div>
     `).join('');
 
+    // Calendar Grid Responsive Scaling
     const calendarGrid = document.getElementById('residentCalendarGrid');
     calendarGrid.innerHTML = '';
 
     for (let i = 0; i < 4; i++) {
         const emptyCell = document.createElement('div');
-        emptyCell.className = 'min-h-[100px] sm:min-h-[120px] bg-slate-50/50 dark:bg-slate-900/30 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800';
+        emptyCell.className = 'min-h-[70px] sm:min-h-[110px] bg-slate-50/50 dark:bg-slate-900/30 rounded-xl sm:rounded-2xl border border-dashed border-slate-200 dark:border-slate-800';
         calendarGrid.appendChild(emptyCell);
     }
 
@@ -1059,16 +1066,16 @@ function renderIndividualRoster() {
             badgeColor = 'bg-slate-400 dark:bg-slate-700 text-white font-bold';
         }
 
-        dayCell.className = `p-3 min-h-[110px] sm:min-h-[125px] rounded-2xl border flex flex-col justify-between transition-all hover:scale-[1.02] ${cardBg}`;
+        dayCell.className = `p-1.5 sm:p-3 min-h-[75px] sm:min-h-[115px] rounded-xl sm:rounded-2xl border flex flex-col justify-between transition-all hover:scale-[1.02] ${cardBg}`;
         dayCell.innerHTML = `
             <div class="flex items-center justify-between">
-                <span class="text-sm sm:text-base font-black ${d.isWeekend ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-200'}">${d.dayNum}</span>
-                <span class="text-xs sm:text-sm px-2.5 py-1 rounded-lg ${badgeColor}">${shift}</span>
+                <span class="text-xs sm:text-base font-black ${d.isWeekend ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-200'}">${d.dayNum}</span>
+                <span class="text-[9px] sm:text-xs px-1 sm:px-2 py-0.5 rounded ${badgeColor}">${shift}</span>
             </div>
-            <div class="mt-2 text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white truncate">
+            <div class="mt-1 text-[10px] sm:text-sm font-extrabold text-slate-900 dark:text-white truncate">
                 ${shiftTitle}
             </div>
-            <div class="text-xs font-bold text-slate-400 mt-1">
+            <div class="text-[9px] sm:text-xs font-bold text-slate-400 mt-0.5">
                 ${isAr ? d.weekdayAR : d.weekdayENShort}
             </div>
         `;
@@ -1117,19 +1124,19 @@ function renderDailyCategoryList(containerId, countId, doctorsList, cardStyle) {
     container.innerHTML = '';
 
     if (doctorsList.length === 0) {
-        container.innerHTML = `<p class="text-sm text-slate-400 italic text-center py-6 font-bold">${t.noDoctors}</p>`;
+        container.innerHTML = `<p class="text-xs sm:text-sm text-slate-400 italic text-center py-4 sm:py-6 font-bold">${t.noDoctors}</p>`;
         return;
     }
 
     doctorsList.forEach(doc => {
         const item = document.createElement('div');
-        item.className = `p-3.5 rounded-xl border flex items-center justify-between transition-all ${cardStyle}`;
+        item.className = `p-2.5 sm:p-3.5 rounded-xl border flex items-center justify-between transition-all ${cardStyle}`;
         item.innerHTML = `
-            <div class="flex items-center gap-2.5">
-                <i class="fa-solid fa-user-doctor text-base"></i>
-                <span class="font-black text-base sm:text-lg">${doc}</span>
+            <div class="flex items-center gap-2 sm:gap-2.5">
+                <i class="fa-solid fa-user-doctor text-xs sm:text-base"></i>
+                <span class="font-black text-xs sm:text-base md:text-lg">${doc}</span>
             </div>
-            <button onclick="inspectDoctor('${doc}')" class="text-xs sm:text-sm font-bold px-3 py-1 rounded-lg bg-white/70 dark:bg-slate-800/70 hover:bg-white dark:hover:bg-slate-800 border transition-all">
+            <button onclick="inspectDoctor('${doc}')" class="text-[11px] sm:text-xs md:text-sm font-bold px-2.5 py-1 rounded-lg bg-white/70 dark:bg-slate-800/70 hover:bg-white dark:hover:bg-slate-800 border transition-all">
                 ${t.btnDetails}
             </button>
         `;
