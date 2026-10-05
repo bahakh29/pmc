@@ -1,332 +1,1177 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl" class="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PMC Internal Medicine Dashboard</title>
-    <!-- Tailwind CSS for modern, custom styling -->
+    <title id="pageTitle">جدول المناوبات والدوام - قسم الباطني</title>
+    
+    <!-- Google Fonts: Cairo & Tajawal -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js for data visualization -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#0284c7',
+                            600: '#0265d2',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    },
+                    fontFamily: {
+                        cairo: ['Cairo', 'sans-serif'],
+                        tajawal: ['Tajawal', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Cairo', sans-serif;
             background-color: #f8fafc;
         }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.95);
-            box-shadow: 0 10px 30px -10px rgba(15, 118, 110, 0.15);
-            border: 1px solid rgba(255,255,255,0.4);
-            border-radius: 1rem;
+        .dark body {
+            background-color: #0f172a;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+
+        .sticky-col {
+            position: sticky;
+            z-index: 20;
+        }
+        [dir="rtl"] .sticky-col {
+            right: 0;
+            left: auto;
+        }
+        [dir="ltr"] .sticky-col {
+            left: 0;
+            right: auto;
+        }
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            .sticky-col {
+                position: static !important;
+            }
         }
     </style>
 </head>
-<body class="text-slate-800 antialiased min-h-screen flex flex-col items-center justify-center relative p-4 sm:p-8">
+<body class="text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
 
-    <!-- LOGIN SCREEN -->
-    <div id="login-screen" class="w-full max-w-md glass-panel p-8 text-center transition-all duration-500 z-10 relative">
-        <div class="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg class="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-        </div>
-        <h2 class="text-2xl font-bold text-slate-800 mb-2">PMC Dashboard</h2>
-        <p class="text-slate-500 text-sm mb-6">Internal Medicine Department Secure Access</p>
-        
-        <form id="login-form">
-            <input type="password" id="password-input" placeholder="Enter Access Password" 
-                   class="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 mb-4 text-center tracking-widest text-slate-700">
-            <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 rounded-lg transition-colors shadow-md hover:shadow-lg">
-                Access Roster
-            </button>
-            <p id="login-error" class="text-red-500 text-sm mt-3 hidden font-medium">Incorrect password. Please try again.</p>
-        </form>
-    </div>
-
-    <!-- DASHBOARD SCREEN (Hidden by default) -->
-    <div id="dashboard-screen" class="w-full max-w-7xl hidden flex-col w-full h-full pb-10">
-        
-        <header class="flex flex-col sm:flex-row justify-between items-center mb-8 glass-panel px-8 py-6">
-            <div>
-                <h1 class="text-3xl font-bold text-slate-800">Palestine Medical Complex</h1>
-                <p class="text-teal-600 font-medium">Internal Medicine Department - October 2026</p>
-            </div>
-            <button onclick="logout()" class="mt-4 sm:mt-0 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold transition-colors border border-slate-200">
-                Sign Out
-            </button>
-        </header>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <!-- SECTION 1: Daily Roster Lookup -->
-            <section class="glass-panel p-6 flex flex-col h-full">
-                <h3 class="text-xl font-bold text-slate-800 mb-4 border-b pb-2 flex items-center justify-between">
-                    <span>Daily Roster Lookup</span>
-                    <span id="display-day-name" class="text-teal-600 font-bold bg-teal-50 px-3 py-1 rounded-full text-sm">Select a day</span>
-                </h3>
-                
-                <div class="mb-5 flex space-x-3 items-center">
-                    <label class="text-sm font-semibold text-slate-600">Day of Month:</label>
-                    <input type="number" id="day-input" min="1" max="31" placeholder="e.g. 15" 
-                           class="w-24 px-3 py-2 border rounded-md focus:ring-2 focus:ring-teal-500 outline-none font-bold text-lg text-center shadow-inner">
-                </div>
-
-                <div class="grid grid-cols-2 gap-4 flex-grow" id="daily-results-container">
-                    <!-- On Call Card -->
-                    <div class="bg-red-50 border border-red-100 rounded-lg p-3">
-                        <div class="text-xs font-bold text-red-800 uppercase mb-2 tracking-wide border-b border-red-200 pb-1">On Call</div>
-                        <ul id="list-oncall" class="text-sm space-y-1 font-medium text-red-900 min-h-[60px]" dir="rtl"></ul>
-                    </div>
-                    <!-- Post Call Card -->
-                    <div class="bg-orange-50 border border-orange-100 rounded-lg p-3">
-                        <div class="text-xs font-bold text-orange-800 uppercase mb-2 tracking-wide border-b border-orange-200 pb-1">Post Call</div>
-                        <ul id="list-postcall" class="text-sm space-y-1 font-medium text-orange-900 min-h-[60px]" dir="rtl"></ul>
-                    </div>
-                    <!-- A Shift Card -->
-                    <div class="bg-blue-50 border border-blue-100 rounded-lg p-3">
-                        <div class="text-xs font-bold text-blue-800 uppercase mb-2 tracking-wide border-b border-blue-200 pb-1">A-Shift</div>
-                        <ul id="list-a" class="text-sm space-y-1 font-medium text-blue-900 min-h-[60px]" dir="rtl"></ul>
-                    </div>
-                    <!-- Off Card -->
-                    <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-3">
-                        <div class="text-xs font-bold text-emerald-800 uppercase mb-2 tracking-wide border-b border-emerald-200 pb-1">Off / Not Assigned</div>
-                        <ul id="list-off" class="text-sm space-y-1 text-emerald-900 min-h-[60px]" dir="rtl"></ul>
-                    </div>
-                </div>
-            </section>
-
-            <!-- SECTION 2: Resident Data Lookup -->
-            <section class="glass-panel p-6 flex flex-col h-full">
-                <h3 class="text-xl font-bold text-slate-800 mb-4 border-b pb-2">Resident Profile & Totals</h3>
-                
-                <div class="mb-5 flex flex-col space-y-2 relative">
-                    <label class="text-sm font-semibold text-slate-600">Select Resident:</label>
-                    <input list="resident-list" id="resident-input" placeholder="Search for resident..." 
-                           class="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-teal-500 outline-none text-right" dir="rtl">
-                    <datalist id="resident-list"></datalist>
-                </div>
-
-                <div id="resident-stats-container" class="hidden flex-col h-full">
-                    <div class="grid grid-cols-4 gap-2 mb-4">
-                        <div class="bg-white border shadow-sm rounded-lg p-3 text-center border-b-4 border-red-500">
-                            <div class="text-[10px] text-slate-500 uppercase font-bold">On Call</div>
-                            <div id="stat-oncall" class="text-2xl font-bold text-slate-800">0</div>
-                        </div>
-                        <div class="bg-white border shadow-sm rounded-lg p-3 text-center border-b-4 border-orange-500">
-                            <div class="text-[10px] text-slate-500 uppercase font-bold">Post Call</div>
-                            <div id="stat-postcall" class="text-2xl font-bold text-slate-800">0</div>
-                        </div>
-                        <div class="bg-white border shadow-sm rounded-lg p-3 text-center border-b-4 border-blue-500">
-                            <div class="text-[10px] text-slate-500 uppercase font-bold">A-Shift</div>
-                            <div id="stat-a" class="text-2xl font-bold text-slate-800">0</div>
-                        </div>
-                        <div class="bg-white border shadow-sm rounded-lg p-3 text-center border-b-4 border-emerald-500">
-                            <div class="text-[10px] text-slate-500 uppercase font-bold">Off</div>
-                            <div id="stat-off" class="text-2xl font-bold text-slate-800">0</div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-slate-50 rounded-lg p-4 border border-slate-200 overflow-y-auto max-h-48 custom-scroll">
-                        <h4 class="text-sm font-bold text-slate-600 mb-3 sticky top-0 bg-slate-50">Full Monthly Schedule</h4>
-                        <table class="w-full text-sm text-left">
-                            <tbody id="resident-schedule-table" class="divide-y divide-slate-200">
-                                <!-- Populated dynamically -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div id="resident-empty-state" class="flex-grow flex items-center justify-center text-slate-400 text-sm">
-                    Search and select a resident to view their statistics.
-                </div>
-            </section>
-        </div>
-
-        <!-- SECTION 3: Main Chart -->
-        <section class="glass-panel p-6 w-full mb-8">
-            <h3 class="text-xl font-bold text-slate-800 mb-6 border-b pb-2">Department Workload Overview</h3>
-            <div class="w-full h-[400px]">
-                <canvas id="mainChart"></canvas>
-            </div>
-        </section>
-
-        <!-- Signature Footer -->
-        <footer class="text-center text-sm font-semibold text-slate-400 pt-4 pb-8">
-            Created by Dr. Baha' Khalifa
-        </footer>
-    </div>
-
-    <!-- SCRIPT DATA & LOGIC -->
-    <script>
-        // Generated Data from OCT-2026-Master.xlsx
-        const dashboardData = {"residents": ["\u0634\u0644\u0637\u0641", "\u062f\u064a\u0646\u0627", "\u0639\u0645\u0631", "\u0645\u062e\u0637\u0648\u0628", "\u0627\u0631\u064a\u062c", "\u0639\u0644\u0627\u0621", "\u0628\u0634\u0627\u0631", "\u0643\u0631\u064a\u0645", "\u0628\u0631\u0627\u0621", "\u062f\u0627\u0644\u064a\u0646", "\u062d\u0648\u0627\u0631\u062b", "\u0641\u0637\u0627\u064a\u0631", "\u0646\u0633\u0631\u064a\u0646", "\u062f\u064a\u0645\u0627", "\u0632\u064a\u0646", "\u0628\u0634\u0631\u0649", "\u0647\u064a\u0627", "\u062a\u0645\u0627\u0636\u0631", "\u062d\u0631\u0628"], "schedule": {"1": {"dayOfWeek": "Thursday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "On call", "\u0627\u0631\u064a\u062c": "Off", "\u0639\u0644\u0627\u0621": "Off", "\u0628\u0634\u0627\u0631": "Off", "\u0643\u0631\u064a\u0645": "On call", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "On call", "\u062f\u064a\u0645\u0627": "Off", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "A", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "A", "\u062d\u0631\u0628": "On call"}}, "2": {"dayOfWeek": "Friday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "On call", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "Off", "\u0639\u0644\u0627\u0621": "Off", "\u0628\u0634\u0627\u0631": "Off", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "On call", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "On call", "\u0646\u0633\u0631\u064a\u0646": "Off", "\u062f\u064a\u0645\u0627": "A", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "On call", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "3": {"dayOfWeek": "Saturday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "Off", "\u0639\u0644\u0627\u0621": "A", "\u0628\u0634\u0627\u0631": "Off", "\u0643\u0631\u064a\u0645": "On call", "\u0628\u0631\u0627\u0621": "On call", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "On call", "\u062f\u064a\u0645\u0627": "On call", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "Off", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "4": {"dayOfWeek": "Sunday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "A", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "A", "\u0639\u0644\u0627\u0621": "On call", "\u0628\u0634\u0627\u0631": "A", "\u0643\u0631\u064a\u0645": "Post call", "\u0628\u0631\u0627\u0621": "Post call", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "On call", "\u0646\u0633\u0631\u064a\u0646": "Post call", "\u062f\u064a\u0645\u0627": "Post call", "\u0632\u064a\u0646": "On call", "\u0628\u0634\u0631\u0649": "On call", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "A", "\u062d\u0631\u0628": "Off"}}, "5": {"dayOfWeek": "Monday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "A", "\u0645\u062e\u0637\u0648\u0628": "A", "\u0627\u0631\u064a\u062c": "On call", "\u0639\u0644\u0627\u0621": "Post call", "\u0628\u0634\u0627\u0631": "A", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "A", "\u062f\u0627\u0644\u064a\u0646": "On call", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Post call", "\u0646\u0633\u0631\u064a\u0646": "On call", "\u062f\u064a\u0645\u0627": "On call", "\u0632\u064a\u0646": "Post call", "\u0628\u0634\u0631\u0649": "Post call", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "A", "\u062d\u0631\u0628": "Off"}}, "6": {"dayOfWeek": "Tuesday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "On call", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "Post call", "\u0639\u0644\u0627\u0621": "A", "\u0628\u0634\u0627\u0631": "A", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "Post call", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "On call", "\u0646\u0633\u0631\u064a\u0646": "Post call", "\u062f\u064a\u0645\u0627": "Post call", "\u0632\u064a\u0646": "On call", "\u0628\u0634\u0631\u0649": "On call", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "A", "\u062d\u0631\u0628": "Off"}}, "7": {"dayOfWeek": "Wednesday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Post call", "\u0645\u062e\u0637\u0648\u0628": "A", "\u0627\u0631\u064a\u062c": "A", "\u0639\u0644\u0627\u0621": "A", "\u0628\u0634\u0627\u0631": "On call", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "On call", "\u062f\u0627\u0644\u064a\u0646": "A", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "Post call", "\u0646\u0633\u0631\u064a\u0646": "On call", "\u062f\u064a\u0645\u0627": "On call", "\u0632\u064a\u0646": "Post call", "\u0628\u0634\u0631\u0649": "Post call", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "A", "\u062d\u0631\u0628": "Off"}}, "8": {"dayOfWeek": "Thursday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "On call", "\u0645\u062e\u0637\u0648\u0628": "On call", "\u0627\u0631\u064a\u062c": "Off", "\u0639\u0644\u0627\u0621": "Off", "\u0628\u0634\u0627\u0631": "Post call", "\u0643\u0631\u064a\u0645": "On call", "\u0628\u0631\u0627\u0621": "Post call", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "On call", "\u0646\u0633\u0631\u064a\u0646": "Post call", "\u062f\u064a\u0645\u0627": "Post call", "\u0632\u064a\u0646": "A", "\u0628\u0634\u0631\u0649": "A", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "9": {"dayOfWeek": "Friday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "Off", "\u0639\u0644\u0627\u0621": "On call", "\u0628\u0634\u0627\u0631": "Off", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "On call", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "On call", "\u062f\u064a\u0645\u0627": "Off", "\u0632\u064a\u0646": "A", "\u0628\u0634\u0631\u0649": "Off", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "On call"}}, "10": {"dayOfWeek": "Saturday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "On call", "\u0639\u0644\u0627\u0621": "Off", "\u0628\u0634\u0627\u0631": "Off", "\u0643\u0631\u064a\u0645": "On call", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "Off", "\u062f\u064a\u0645\u0627": "A", "\u0632\u064a\u0646": "On call", "\u0628\u0634\u0631\u0649": "On call", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "11": {"dayOfWeek": "Sunday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "A", "\u0645\u062e\u0637\u0648\u0628": "A", "\u0627\u0631\u064a\u062c": "Post call", "\u0639\u0644\u0627\u0621": "On call", "\u0628\u0634\u0627\u0631": "On call", "\u0643\u0631\u064a\u0645": "Post call", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "A", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "On call", "\u0646\u0633\u0631\u064a\u0646": "A", "\u062f\u064a\u0645\u0627": "On call", "\u0632\u064a\u0646": "Post call", "\u0628\u0634\u0631\u0649": "Post call", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "12": {"dayOfWeek": "Monday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "A", "\u0645\u062e\u0637\u0648\u0628": "On call", "\u0627\u0631\u064a\u062c": "A", "\u0639\u0644\u0627\u0621": "Post call", "\u0628\u0634\u0627\u0631": "Post call", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "A", "\u062f\u0627\u0644\u064a\u0646": "On call", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Post call", "\u0646\u0633\u0631\u064a\u0646": "On call", "\u062f\u064a\u0645\u0627": "Post call", "\u0632\u064a\u0646": "A", "\u0628\u0634\u0631\u0649": "On call", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "13": {"dayOfWeek": "Tuesday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "On call", "\u0645\u062e\u0637\u0648\u0628": "Post call", "\u0627\u0631\u064a\u062c": "A", "\u0639\u0644\u0627\u0621": "A", "\u0628\u0634\u0627\u0631": "A", "\u0643\u0631\u064a\u0645": "On call", "\u0628\u0631\u0627\u0621": "A", "\u062f\u0627\u0644\u064a\u0646": "Post call", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "On call", "\u0646\u0633\u0631\u064a\u0646": "Post call", "\u062f\u064a\u0645\u0627": "Off", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "Post call", "\u0647\u064a\u0627": "On call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "14": {"dayOfWeek": "Wednesday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "Post call", "\u0645\u062e\u0637\u0648\u0628": "A", "\u0627\u0631\u064a\u062c": "A", "\u0639\u0644\u0627\u0621": "A", "\u0628\u0634\u0627\u0631": "On call", "\u0643\u0631\u064a\u0645": "Post call", "\u0628\u0631\u0627\u0621": "On call", "\u062f\u0627\u0644\u064a\u0646": "A", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "Post call", "\u0646\u0633\u0631\u064a\u0646": "On call", "\u062f\u064a\u0645\u0627": "On call", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "Off", "\u0647\u064a\u0627": "Post call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "15": {"dayOfWeek": "Thursday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "On call", "\u0645\u062e\u0637\u0648\u0628": "On call", "\u0627\u0631\u064a\u062c": "A", "\u0639\u0644\u0627\u0621": "Off", "\u0628\u0634\u0627\u0631": "Post call", "\u0643\u0631\u064a\u0645": "On call", "\u0628\u0631\u0627\u0621": "Post call", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "A", "\u0646\u0633\u0631\u064a\u0646": "Post call", "\u062f\u064a\u0645\u0627": "Post call", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "Off", "\u0647\u064a\u0627": "On call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "16": {"dayOfWeek": "Friday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "A", "\u0627\u0631\u064a\u062c": "Off", "\u0639\u0644\u0627\u0621": "On call", "\u0628\u0634\u0627\u0631": "On call", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "Off", "\u062f\u064a\u0645\u0627": "Off", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "On call", "\u0647\u064a\u0627": "Off", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "On call"}}, "17": {"dayOfWeek": "Saturday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "On call", "\u0639\u0644\u0627\u0621": "Off", "\u0628\u0634\u0627\u0631": "Off", "\u0643\u0631\u064a\u0645": "A", "\u0628\u0631\u0627\u0621": "On call", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "Off", "\u062f\u064a\u0645\u0627": "On call", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "Off", "\u0647\u064a\u0627": "On call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "18": {"dayOfWeek": "Sunday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "A", "\u0645\u062e\u0637\u0648\u0628": "On call", "\u0627\u0631\u064a\u062c": "Post call", "\u0639\u0644\u0627\u0621": "On call", "\u0628\u0634\u0627\u0631": "A", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "Post call", "\u062f\u0627\u0644\u064a\u0646": "On call", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "On call", "\u062f\u064a\u0645\u0627": "Post call", "\u0632\u064a\u0646": "A", "\u0628\u0634\u0631\u0649": "Off", "\u0647\u064a\u0627": "Post call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "19": {"dayOfWeek": "Monday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "A", "\u0645\u062e\u0637\u0648\u0628": "Post call", "\u0627\u0631\u064a\u062c": "On call", "\u0639\u0644\u0627\u0621": "Post call", "\u0628\u0634\u0627\u0631": "A", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "Post call", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "A", "\u0646\u0633\u0631\u064a\u0646": "Post call", "\u062f\u064a\u0645\u0627": "Off", "\u0632\u064a\u0646": "On call", "\u0628\u0634\u0631\u0649": "On call", "\u0647\u064a\u0627": "On call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "20": {"dayOfWeek": "Tuesday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "On call", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "Post call", "\u0639\u0644\u0627\u0621": "On call", "\u0628\u0634\u0627\u0631": "Off", "\u0643\u0631\u064a\u0645": "A", "\u0628\u0631\u0627\u0621": "A", "\u062f\u0627\u0644\u064a\u0646": "On call", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "On call", "\u062f\u064a\u0645\u0627": "Off", "\u0632\u064a\u0646": "Post call", "\u0628\u0634\u0631\u0649": "Post call", "\u0647\u064a\u0627": "Post call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "21": {"dayOfWeek": "Wednesday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "Post call", "\u0645\u062e\u0637\u0648\u0628": "A", "\u0627\u0631\u064a\u062c": "Off", "\u0639\u0644\u0627\u0621": "Post call", "\u0628\u0634\u0627\u0631": "On call", "\u0643\u0631\u064a\u0645": "A", "\u0628\u0631\u0627\u0621": "A", "\u062f\u0627\u0644\u064a\u0646": "Post call", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "Post call", "\u062f\u064a\u0645\u0627": "Off", "\u0632\u064a\u0646": "On call", "\u0628\u0634\u0631\u0649": "On call", "\u0647\u064a\u0627": "On call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "22": {"dayOfWeek": "Thursday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "On call", "\u0645\u062e\u0637\u0648\u0628": "On call", "\u0627\u0631\u064a\u062c": "Off", "\u0639\u0644\u0627\u0621": "Off", "\u0628\u0634\u0627\u0631": "Post call", "\u0643\u0631\u064a\u0645": "On call", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "On call", "\u0646\u0633\u0631\u064a\u0646": "A", "\u062f\u064a\u0645\u0627": "Off", "\u0632\u064a\u0646": "Post call", "\u0628\u0634\u0631\u0649": "Post call", "\u0647\u064a\u0627": "Post call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "23": {"dayOfWeek": "Friday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "Off", "\u0639\u0644\u0627\u0621": "On call", "\u0628\u0634\u0627\u0631": "Off", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "On call", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "Off", "\u062f\u064a\u0645\u0627": "A", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "Off", "\u0647\u064a\u0627": "On call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "On call"}}, "24": {"dayOfWeek": "Saturday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "On call", "\u0639\u0644\u0627\u0621": "Off", "\u0628\u0634\u0627\u0631": "Off", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "On call", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "On call", "\u062f\u064a\u0645\u0627": "On call", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "Off", "\u0647\u064a\u0627": "A", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "25": {"dayOfWeek": "Sunday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "A", "\u0645\u062e\u0637\u0648\u0628": "A", "\u0627\u0631\u064a\u062c": "Post call", "\u0639\u0644\u0627\u0621": "Off", "\u0628\u0634\u0627\u0631": "On call", "\u0643\u0631\u064a\u0645": "A", "\u0628\u0631\u0627\u0621": "A", "\u062f\u0627\u0644\u064a\u0646": "Post call", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "On call", "\u0646\u0633\u0631\u064a\u0646": "Post call", "\u062f\u064a\u0645\u0627": "Post call", "\u0632\u064a\u0646": "On call", "\u0628\u0634\u0631\u0649": "Off", "\u0647\u064a\u0627": "On call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "26": {"dayOfWeek": "Monday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "On call", "\u0639\u0644\u0627\u0621": "On call", "\u0628\u0634\u0627\u0631": "Post call", "\u0643\u0631\u064a\u0645": "A", "\u0628\u0631\u0627\u0621": "A", "\u062f\u0627\u0644\u064a\u0646": "A", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Post call", "\u0646\u0633\u0631\u064a\u0646": "Off", "\u062f\u064a\u0645\u0627": "On call", "\u0632\u064a\u0646": "Post call", "\u0628\u0634\u0631\u0649": "On call", "\u0647\u064a\u0627": "Post call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "27": {"dayOfWeek": "Tuesday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "A", "\u0645\u062e\u0637\u0648\u0628": "A", "\u0627\u0631\u064a\u062c": "Post call", "\u0639\u0644\u0627\u0621": "Post call", "\u0628\u0634\u0627\u0631": "A", "\u0643\u0631\u064a\u0645": "On call", "\u0628\u0631\u0627\u0621": "On call", "\u062f\u0627\u0644\u064a\u0646": "A", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "A", "\u0646\u0633\u0631\u064a\u0646": "Off", "\u062f\u064a\u0645\u0627": "Post call", "\u0632\u064a\u0646": "On call", "\u0628\u0634\u0631\u0649": "Post call", "\u0647\u064a\u0627": "On call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "28": {"dayOfWeek": "Wednesday", "assignments": {"\u0634\u0644\u0637\u0641": "A", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "A", "\u0627\u0631\u064a\u062c": "A", "\u0639\u0644\u0627\u0621": "A", "\u0628\u0634\u0627\u0631": "On call", "\u0643\u0631\u064a\u0645": "Post call", "\u0628\u0631\u0627\u0621": "Post call", "\u062f\u0627\u0644\u064a\u0646": "A", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "On call", "\u0646\u0633\u0631\u064a\u0646": "Off", "\u062f\u064a\u0645\u0627": "On call", "\u0632\u064a\u0646": "Post call", "\u0628\u0634\u0631\u0649": "On call", "\u0647\u064a\u0627": "Post call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "29": {"dayOfWeek": "Thursday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "A", "\u0639\u0645\u0631": "On call", "\u0645\u062e\u0637\u0648\u0628": "On call", "\u0627\u0631\u064a\u062c": "A", "\u0639\u0644\u0627\u0621": "Off", "\u0628\u0634\u0627\u0631": "Post call", "\u0643\u0631\u064a\u0645": "On call", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "A", "\u0641\u0637\u0627\u064a\u0631": "Post call", "\u0646\u0633\u0631\u064a\u0646": "A", "\u062f\u064a\u0645\u0627": "Post call", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "Post call", "\u0647\u064a\u0627": "On call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "30": {"dayOfWeek": "Friday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "Off", "\u0639\u0644\u0627\u0621": "On call", "\u0628\u0634\u0627\u0631": "On call", "\u0643\u0631\u064a\u0645": "Off", "\u0628\u0631\u0627\u0621": "Off", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "On call", "\u0646\u0633\u0631\u064a\u0646": "Off", "\u062f\u064a\u0645\u0627": "Off", "\u0632\u064a\u0646": "On call", "\u0628\u0634\u0631\u0649": "Off", "\u0647\u064a\u0627": "A", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}, "31": {"dayOfWeek": "Saturday", "assignments": {"\u0634\u0644\u0637\u0641": "Off", "\u062f\u064a\u0646\u0627": "Off", "\u0639\u0645\u0631": "Off", "\u0645\u062e\u0637\u0648\u0628": "Off", "\u0627\u0631\u064a\u062c": "On call", "\u0639\u0644\u0627\u0621": "Off", "\u0628\u0634\u0627\u0631": "Off", "\u0643\u0631\u064a\u0645": "On call", "\u0628\u0631\u0627\u0621": "On call", "\u062f\u0627\u0644\u064a\u0646": "Off", "\u062d\u0648\u0627\u0631\u062b": "Off", "\u0641\u0637\u0627\u064a\u0631": "Off", "\u0646\u0633\u0631\u064a\u0646": "Off", "\u062f\u064a\u0645\u0627": "A", "\u0632\u064a\u0646": "Off", "\u0628\u0634\u0631\u0649": "Off", "\u0647\u064a\u0627": "On call", "\u062a\u0645\u0627\u0636\u0631": "Off", "\u062d\u0631\u0628": "Off"}}}, "statistics": {"\u0634\u0644\u0637\u0641": {"On call": 0, "Post call": 0, "Off": 15, "A": 16, "Other": 0}, "\u062f\u064a\u0646\u0627": {"On call": 0, "Post call": 0, "Off": 16, "A": 15, "Other": 0}, "\u0639\u0645\u0631": {"On call": 8, "Post call": 3, "Off": 12, "A": 8, "Other": 0}, "\u0645\u062e\u0637\u0648\u0628": {"On call": 7, "Post call": 2, "Off": 13, "A": 9, "Other": 0}, "\u0627\u0631\u064a\u062c": {"On call": 7, "Post call": 6, "Off": 10, "A": 8, "Other": 0}, "\u0639\u0644\u0627\u0621": {"On call": 9, "Post call": 5, "Off": 11, "A": 6, "Other": 0}, "\u0628\u0634\u0627\u0631": {"On call": 8, "Post call": 6, "Off": 10, "A": 7, "Other": 0}, "\u0643\u0631\u064a\u0645": {"On call": 10, "Post call": 4, "Off": 12, "A": 5, "Other": 0}, "\u0628\u0631\u0627\u0621": {"On call": 7, "Post call": 5, "Off": 12, "A": 7, "Other": 0}, "\u062f\u0627\u0644\u064a\u0646": {"On call": 7, "Post call": 5, "Off": 13, "A": 6, "Other": 0}, "\u062d\u0648\u0627\u0631\u062b": {"On call": 0, "Post call": 0, "Off": 19, "A": 12, "Other": 0}, "\u0641\u0637\u0627\u064a\u0631": {"On call": 10, "Post call": 6, "Off": 12, "A": 3, "Other": 0}, "\u0646\u0633\u0631\u064a\u0646": {"On call": 10, "Post call": 8, "Off": 10, "A": 3, "Other": 0}, "\u062f\u064a\u0645\u0627": {"On call": 9, "Post call": 9, "Off": 9, "A": 4, "Other": 0}, "\u0632\u064a\u0646": {"On call": 8, "Post call": 7, "Off": 12, "A": 4, "Other": 0}, "\u0628\u0634\u0631\u0649": {"On call": 10, "Post call": 8, "Off": 11, "A": 2, "Other": 0}, "\u0647\u064a\u0627": {"On call": 10, "Post call": 6, "Off": 13, "A": 2, "Other": 0}, "\u062a\u0645\u0627\u0636\u0631": {"On call": 0, "Post call": 0, "Off": 26, "A": 5, "Other": 0}, "\u062d\u0631\u0628": {"On call": 4, "Post call": 0, "Off": 27, "A": 0, "Other": 0}}};
-
-        // UI Initialization
-        document.addEventListener('DOMContentLoaded', () => {
+<!-- Header Container -->
+<header class="bg-gradient-to-r from-slate-900 via-brand-900 to-slate-900 text-white shadow-lg sticky top-0 z-30 border-b border-slate-700">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-4">
             
-            // Handle Login
-            document.getElementById('login-form').addEventListener('submit', (e) => {
-                e.preventDefault();
-                const pwd = document.getElementById('password-input').value;
-                if(pwd === 'PMC123') {
-                    document.getElementById('login-screen').classList.add('hidden');
-                    document.getElementById('dashboard-screen').classList.remove('hidden');
-                    document.getElementById('dashboard-screen').classList.add('flex');
-                    initDashboard();
-                } else {
-                    document.getElementById('login-error').classList.remove('hidden');
-                }
-            });
+            <!-- Title & Subtitle -->
+            <div class="flex items-center gap-3 text-center md:text-start">
+                <div class="p-3 bg-brand-600/30 rounded-2xl border border-brand-500/30 text-brand-300">
+                    <i class="fa-solid fa-hospital-user text-2xl sm:text-3xl"></i>
+                </div>
+                <div>
+                    <div class="flex items-center justify-center md:justify-start gap-2">
+                        <span id="ui-programBadge" class="text-xs sm:text-sm font-bold tracking-wide uppercase px-3 py-0.5 rounded-full bg-brand-500/20 text-brand-300 border border-brand-500/30">
+                            برنامج مقيمي الباطني
+                        </span>
+                        <span id="ui-hospitalName" class="text-xs sm:text-sm text-slate-400">| مجمع فلسطين الطبي</span>
+                    </div>
+                    <h1 id="ui-headerTitle" class="text-xl sm:text-2xl font-extrabold tracking-tight text-white mt-1">
+                        جدول المناوبات والدوام
+                    </h1>
+                </div>
+            </div>
 
-            // Handle Daily Lookup Input
-            document.getElementById('day-input').addEventListener('input', (e) => {
-                const day = e.target.value;
-                if(day >= 1 && day <= 31) {
-                    renderDailyRoster(day);
-                } else {
-                    clearDailyRoster();
-                }
-            });
+            <!-- Action Controls -->
+            <div class="flex items-center gap-2 no-print">
+                <!-- Last Updated Timestamp Badge -->
+                <div id="lastUpdatedContainer" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800/90 text-slate-300 border border-slate-700 text-xs font-semibold shadow-inner">
+                    <i class="fa-regular fa-clock text-brand-400"></i>
+                    <span id="lastUpdatedText">--:--</span>
+                </div>
 
-            // Handle Resident Lookup Input
-            document.getElementById('resident-input').addEventListener('input', (e) => {
-                const resName = e.target.value;
-                if(dashboardData.residents.includes(resName)) {
-                    renderResidentStats(resName);
-                } else {
-                    document.getElementById('resident-stats-container').classList.add('hidden');
-                    document.getElementById('resident-empty-state').classList.remove('hidden');
+                <!-- Sync Sheet Button -->
+                <button onclick="fetchSheetData(true)" id="syncBtn" class="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-all text-xs sm:text-sm font-bold shadow-sm" title="تحديث البيانات">
+                    <i id="syncIcon" class="fa-solid fa-rotate text-sm"></i>
+                    <span id="syncText">تحديث البيانات</span>
+                </button>
+
+                <!-- Language Toggle -->
+                <button id="langToggleBtn" onclick="toggleLanguage()" class="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-all text-xs sm:text-sm font-bold" title="تبديل اللغة / Switch Language">
+                    <i class="fa-solid fa-language text-base"></i>
+                    <span id="langBtnText">English</span>
+                </button>
+
+                <!-- Theme Toggle -->
+                <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition-all" title="تبديل الوضع">
+                    <i id="themeIcon" class="fa-solid fa-moon text-lg"></i>
+                </button>
+
+                <!-- Export CSV -->
+                <button onclick="exportScheduleCSV()" class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm transition-all shadow-sm">
+                    <i class="fa-solid fa-file-csv text-base"></i>
+                    <span id="ui-btnExport" class="hidden sm:inline">تصدير Excel</span>
+                </button>
+
+                <!-- Print Schedule -->
+                <button onclick="window.print()" class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-medium text-sm transition-all border border-slate-600 shadow-sm">
+                    <i class="fa-solid fa-print text-base"></i>
+                    <span id="ui-btnPrint" class="hidden sm:inline">طباعة</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="flex gap-2 overflow-x-auto custom-scrollbar mt-5 pt-2 border-t border-slate-800 no-print" id="mainTabs">
+            <button onclick="switchTab('analytics')" id="tab-analytics" class="tab-btn flex items-center gap-2 px-4 py-2.5 text-sm sm:text-base font-bold rounded-xl whitespace-nowrap transition-all bg-brand-600 text-white shadow">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span id="ui-tabAnalytics">📊 الملخص</span>
+            </button>
+            <button onclick="switchTab('matrix')" id="tab-matrix" class="tab-btn flex items-center gap-2 px-4 py-2.5 text-sm sm:text-base font-bold rounded-xl whitespace-nowrap transition-all text-slate-300 hover:bg-slate-800 hover:text-white">
+                <i class="fa-solid fa-calendar-days"></i>
+                <span id="ui-tabMatrix">🗓️ الجدول الشامل للشهر</span>
+            </button>
+            <button onclick="switchTab('resident')" id="tab-resident" class="tab-btn flex items-center gap-2 px-4 py-2.5 text-sm sm:text-base font-bold rounded-xl whitespace-nowrap transition-all text-slate-300 hover:bg-slate-800 hover:text-white">
+                <i class="fa-solid fa-user-doctor"></i>
+                <span id="ui-tabResident">👤 جدول الطبيب المقيم</span>
+            </button>
+            <button onclick="switchTab('daily')" id="tab-daily" class="tab-btn flex items-center gap-2 px-4 py-2.5 text-sm sm:text-base font-bold rounded-xl whitespace-nowrap transition-all text-slate-300 hover:bg-slate-800 hover:text-white">
+                <i class="fa-solid fa-clock"></i>
+                <span id="ui-tabDaily">📅 التوزيع اليومي للدوام</span>
+            </button>
+        </nav>
+    </div>
+</header>
+
+<!-- Main Container -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+<!-- KPI Cards Section -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-4">
+        <div class="p-3.5 bg-brand-50 dark:bg-brand-950/50 text-brand-600 dark:text-brand-400 rounded-2xl text-3xl">
+            <i class="fa-solid fa-users-medical"></i>
+        </div>
+        <div>
+            <p id="ui-kpiResidentsLabel" class="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400">عدد الأطباء المقيمين</p>
+            <h3 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-0.5" id="kpi-total-residents">19</h3>
+        </div>
+    </div>
+</section>
+
+<!-- TAB 1: EXECUTIVE ANALYTICS -->
+<div id="view-analytics" class="tab-content space-y-6">
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+            <h3 id="ui-chartTitle" class="font-black text-xl text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-chart-column text-rose-500"></i>
+                توزيع عدد المناوبات لكل طبيب
+            </h3>
+        </div>
+        <div class="h-80">
+            <canvas id="onCallChart"></canvas>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+            <h3 id="ui-summaryTableTitle" class="font-black text-xl text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-indigo-500"></i>
+                ملخص دوام المقيمين
+            </h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-start text-base">
+                <thead class="bg-slate-50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 text-sm sm:text-base">
+                    <tr>
+                        <th class="p-4 font-extrabold">#</th>
+                        <th id="ui-thDocName" class="p-4 font-extrabold">اسم الطبيب المقيم</th>
+                        <th id="ui-thOnCall" class="p-4 font-extrabold text-center">المناوبات (On Call)</th>
+                        <th id="ui-thPostCall" class="p-4 font-extrabold text-center">بعد المناوبة (Post Call)</th>
+                        <th id="ui-thDutyA" class="p-4 font-extrabold text-center">A</th>
+                        <th id="ui-thOff" class="p-4 font-extrabold text-center">أيام العطلة (Off)</th>
+                    </tr>
+                </thead>
+                <tbody id="analyticsTableBody" class="divide-y divide-slate-200 dark:divide-slate-700">
+                    <!-- Populated via JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- TAB 2: MASTER SCHEDULE MATRIX -->
+<div id="view-matrix" class="tab-content hidden space-y-4">
+    <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="relative w-full md:w-80">
+            <i class="fa-solid fa-magnifying-glass absolute rtl:right-3.5 ltr:left-3.5 top-3.5 text-slate-400 text-base"></i>
+            <input type="text" id="doctorSearchInput" oninput="renderMatrixTable()" placeholder="بحث باسم الطبيب..." 
+                class="w-full rtl:pr-10 rtl:pl-3 ltr:pl-10 ltr:pr-3 py-2.5 text-base bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all">
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 text-sm w-full md:w-auto justify-start md:justify-end">
+            <span id="ui-filterLabel" class="font-extrabold text-slate-600 dark:text-slate-300 mx-1">تصفية:</span>
+            <button onclick="filterMatrixShift('ALL')" id="btn-filter-ALL" class="px-3.5 py-2 rounded-xl border font-bold transition-all bg-brand-600 text-white border-brand-600">الكل</button>
+            <button onclick="filterMatrixShift('On call')" id="btn-filter-Oncall" class="px-3.5 py-2 rounded-xl border font-bold transition-all bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800">مناوبة</button>
+            <button onclick="filterMatrixShift('Post call')" id="btn-filter-Postcall" class="px-3.5 py-2 rounded-xl border font-bold transition-all bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">بعد المناوبة</button>
+            <button onclick="filterMatrixShift('A')" id="btn-filter-A" class="px-3.5 py-2 rounded-xl border font-bold transition-all bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800">A</button>
+            <button onclick="filterMatrixShift('Off')" id="btn-filter-Off" class="px-3.5 py-2 rounded-xl border font-bold transition-all bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">عطلة Off</button>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto custom-scrollbar max-h-[650px]">
+            <table class="w-full text-start text-sm border-collapse">
+                <thead class="bg-slate-900 text-white sticky top-0 z-30 shadow">
+                    <tr id="matrixHeaderRow">
+                        <!-- Populated by JS -->
+                    </tr>
+                </thead>
+                <tbody id="matrixTableBody" class="divide-y divide-slate-200 dark:divide-slate-700/60">
+                    <!-- Populated by JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- TAB 3: INDIVIDUAL RESIDENT ROSTER (ENLARGED FONTS) -->
+<div id="view-resident" class="tab-content hidden space-y-6">
+    <!-- Resident Selection Header -->
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="flex items-center gap-4 w-full md:w-auto">
+            <div class="p-4 bg-brand-500/10 text-brand-600 dark:text-brand-400 rounded-2xl text-3xl">
+                <i class="fa-solid fa-user-doctor"></i>
+            </div>
+            <div class="w-full md:w-auto">
+                <label id="ui-labelSelectDoc" for="residentSelect" class="block text-sm sm:text-base font-bold text-slate-600 dark:text-slate-300 mb-1">اختر الطبيب المقيم:</label>
+                <select id="residentSelect" onchange="renderIndividualRoster()" 
+                    class="block w-full md:w-72 py-3 px-4 border-2 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl text-lg sm:text-xl font-black focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all shadow-sm">
+                    <!-- Populated by JS -->
+                </select>
+            </div>
+        </div>
+
+        <!-- Resident Duty Counts Summary Badges -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full md:w-auto text-center" id="residentStatsSummary">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+
+    <!-- Calendar View for Selected Doctor -->
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-6">
+            <h3 id="ui-calendarTitle" class="font-black text-xl sm:text-2xl text-slate-900 dark:text-white flex items-center gap-3">
+                <i class="fa-regular fa-calendar-days text-brand-500 text-2xl"></i>
+                التقويم الشهري الشخصي
+            </h3>
+            <span class="text-lg sm:text-xl font-black text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/50 px-4 py-1.5 rounded-xl border border-brand-200 dark:border-brand-800" id="selectedDoctorNameDisplay">شلطف</span>
+        </div>
+
+        <!-- Calendar Days Header -->
+        <div id="calendarWeekdayHeaders" class="grid grid-cols-7 gap-2 text-center font-black text-sm sm:text-base bg-slate-100 dark:bg-slate-900 p-3 rounded-xl mb-3 text-slate-700 dark:text-slate-300 shadow-inner">
+            <!-- Populated via JS -->
+        </div>
+
+        <!-- Calendar Days Grid -->
+        <div id="residentCalendarGrid" class="grid grid-cols-7 gap-2 sm:gap-2.5">
+            <!-- Populated via JS -->
+        </div>
+    </div>
+</div>
+
+<!-- TAB 4: DAILY SHIFT BREAKDOWN -->
+<div id="view-daily" class="tab-content hidden space-y-6">
+    <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-3.5 bg-brand-600 text-white rounded-2xl shadow-md text-2xl">
+                    <i class="fa-regular fa-calendar-check"></i>
+                </div>
+                <div>
+                    <span id="ui-dailySubtitle" class="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400">استعراض تفاصيل اليوم</span>
+                    <h3 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white" id="selectedDayTitle">الخميس، 1</h3>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 w-full md:w-auto">
+                <label id="ui-labelSelectDay" for="daySelect" class="text-base font-extrabold text-slate-700 dark:text-slate-200 whitespace-nowrap">حدد اليوم:</label>
+                <select id="daySelect" onchange="renderDailyBreakdown()" class="w-full md:w-56 py-2.5 px-3.5 border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl text-base font-extrabold focus:ring-2 focus:ring-brand-500">
+                    <!-- Populated by JS -->
+                </select>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar pt-4 mt-4 border-t border-slate-200 dark:border-slate-700" id="dayQuickPickerButtons">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+
+    <!-- 4 Duty Columns -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-rose-200 dark:border-rose-900/60 shadow-sm overflow-hidden">
+            <div class="bg-rose-500 text-white p-4 flex items-center justify-between">
+                <div class="flex items-center gap-2 font-black text-base sm:text-lg">
+                    <i class="fa-solid fa-bell"></i>
+                    <span id="ui-cardTitleOnCall">مناوبة (On Call)</span>
+                </div>
+                <span id="daily-count-oncall" class="px-3 py-0.5 rounded-full bg-white/20 text-sm font-black">0</span>
+            </div>
+            <div class="p-4 space-y-3 min-h-[220px]" id="daily-list-oncall"></div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-amber-200 dark:border-amber-900/60 shadow-sm overflow-hidden">
+            <div class="bg-amber-500 text-white p-4 flex items-center justify-between">
+                <div class="flex items-center gap-2 font-black text-base sm:text-lg">
+                    <i class="fa-solid fa-bed"></i>
+                    <span id="ui-cardTitlePostCall">بعد المناوبة (Post Call)</span>
+                </div>
+                <span id="daily-count-postcall" class="px-3 py-0.5 rounded-full bg-white/20 text-sm font-black">0</span>
+            </div>
+            <div class="p-4 space-y-3 min-h-[220px]" id="daily-list-postcall"></div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-indigo-200 dark:border-indigo-900/60 shadow-sm overflow-hidden">
+            <div class="bg-indigo-600 text-white p-4 flex items-center justify-between">
+                <div class="flex items-center gap-2 font-black text-base sm:text-lg">
+                    <i class="fa-solid fa-user-gear"></i>
+                    <span id="ui-cardTitleDutyA">A</span>
+                </div>
+                <span id="daily-count-duty" class="px-3 py-0.5 rounded-full bg-white/20 text-sm font-black">0</span>
+            </div>
+            <div class="p-4 space-y-3 min-h-[220px]" id="daily-list-duty"></div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+            <div class="bg-slate-600 text-white p-4 flex items-center justify-between">
+                <div class="flex items-center gap-2 font-black text-base sm:text-lg">
+                    <i class="fa-solid fa-mug-hot"></i>
+                    <span id="ui-cardTitleOff">عطلة (Off)</span>
+                </div>
+                <span id="daily-count-off" class="px-3 py-0.5 rounded-full bg-white/20 text-sm font-black">0</span>
+            </div>
+            <div class="p-4 space-y-3 min-h-[220px]" id="daily-list-off"></div>
+        </div>
+    </div>
+</div>
+
+</main>
+
+<script>
+/**
+ * GOOGLE SHEETS SYNC CONFIGURATION
+ */
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyxY72HPcwO8PSVCr1aBCkqrBXafKUmKRBq-4QTovbsA9zFtJg9FYSkhsXQdLvejxylPQ/exec"; 
+
+let RESIDENTS = [
+    "شلطف", "دينا", "عمر", "مخطوب", "اريج", "علاء", "بشار", "كريم", 
+    "براء", "دالين", "حوارث", "فطاير", "نسرين", "ديما", "زين", "بشرى", "هيا", "تماضر", "حرب"
+];
+
+const WEEKDAYS_AR = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+const WEEKDAYS_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const WEEKDAYS_EN_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const OCT_2026_DAYS = Array.from({length: 31}, (_, i) => {
+    const dayNum = i + 1;
+    const dayIdx = (i + 4) % 7;
+    return { 
+        dayNum, 
+        weekdayAR: WEEKDAYS_AR[dayIdx],
+        weekdayEN: WEEKDAYS_EN[dayIdx],
+        weekdayENShort: WEEKDAYS_EN_SHORT[dayIdx],
+        isWeekend: dayIdx === 5 || dayIdx === 6 
+    };
+});
+
+let RAW_SCHEDULE = {
+    1: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "On call", "اريج": "Off", "علاء": "Off", "بشار": "Off", "كريم": "On call", "براء": "Post call", "دالين": "Off", "حوارث": "A", "فطاير": "Post call", "نسرين": "On call", "ديما": "Post call", "زين": "Off", "بشرى": "A", "هيا": "Off", "تماضر": "A", "حرب": "On call" },
+    2: { "شلطف": "Off", "دينا": "Off", "عمر": "On call", "مخطوب": "Off", "اريج": "Off", "علاء": "Off", "بشار": "Off", "كريم": "Off", "براء": "Off", "دالين": "On call", "حوارث": "Off", "فطاير": "On call", "نسرين": "Off", "ديما": "A", "زين": "Off", "بشرى": "On call", "هيا": "Off", "تماضر": "Off", "حرب": "Off" },
+    3: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "Off", "اريج": "Off", "علاء": "A", "بشار": "Off", "كريم": "On call", "براء": "On call", "دالين": "Off", "حوارث": "Off", "فطاير": "Off", "نسرين": "On call", "ديما": "On call", "زين": "Off", "بشرى": "Off", "هيا": "Off", "تماضر": "Off", "حرب": "Off" },
+    4: { "شلطف": "A", "دينا": "A", "عمر": "A", "مخطوب": "Off", "اريج": "A", "علاء": "On call", "بشار": "A", "كريم": "Post call", "براء": "Post call", "دالين": "Off", "حوارث": "A", "فطاير": "On call", "نسرين": "Post call", "ديما": "Post call", "زين": "On call", "بشرى": "On call", "هيا": "Off", "تماضر": "A", "حرب": "Off" },
+    5: { "شلطف": "A", "دينا": "A", "عمر": "A", "مخطوب": "A", "اريج": "On call", "علاء": "Post call", "بشار": "A", "كريم": "Off", "براء": "A", "دالين": "On call", "حوارث": "Off", "فطاير": "Post call", "نسرين": "On call", "ديما": "On call", "زين": "Post call", "بشرى": "Post call", "هيا": "Off", "تماضر": "A", "حرب": "Off" },
+    6: { "شلطف": "A", "دينا": "A", "عمر": "On call", "مخطوب": "Off", "اريج": "Post call", "علاء": "A", "بشار": "A", "كريم": "Off", "براء": "Off", "دالين": "Post call", "حوارث": "Off", "فطاير": "On call", "نسرين": "Post call", "ديما": "Post call", "زين": "On call", "بشرى": "On call", "هيا": "Off", "تماضر": "A", "حرب": "Off" },
+    7: { "شلطف": "A", "دينا": "Off", "عمر": "Post call", "مخطوب": "A", "اريج": "A", "علاء": "A", "بشار": "On call", "كريم": "Off", "براء": "On call", "دالين": "A", "حوارث": "A", "فطاير": "Post call", "نسرين": "On call", "ديما": "On call", "زين": "Post call", "بشرى": "Post call", "هيا": "Off", "تماضر": "A", "حرب": "Off" },
+    8: { "شلطف": "Off", "دينا": "Off", "عمر": "On call", "مخطوب": "On call", "اريج": "Off", "علاء": "Off", "بشار": "Post call", "كريم": "On call", "براء": "Post call", "دالين": "Off", "حوارث": "Off", "فطاير": "On call", "نسرين": "Post call", "ديما": "Post call", "زين": "A", "بشرى": "A", "هيا": "Off", "تماضر": "Off", "حرب": "Off" },
+    9: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "Off", "اريج": "Off", "علاء": "On call", "بشار": "Off", "كريم": "Off", "براء": "Off", "دالين": "On call", "حوارث": "Off", "فطاير": "Off", "نسرين": "On call", "ديما": "Off", "زين": "A", "بشرى": "Off", "هيا": "Off", "تماضر": "Off", "حرب": "On call" },
+    10: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "Off", "اريج": "On call", "علاء": "Off", "بشار": "Off", "كريم": "On call", "براء": "Off", "دالين": "Off", "حوارث": "Off", "فطاير": "Off", "نسرين": "Off", "ديما": "A", "زين": "On call", "بشرى": "On call", "هيا": "Off", "تماضر": "Off", "حرب": "Off" },
+    11: { "شلطف": "A", "دينا": "A", "عمر": "A", "مخطوب": "A", "اريج": "Post call", "علاء": "On call", "بشار": "On call", "كريم": "Post call", "براء": "Off", "دالين": "A", "حوارث": "A", "فطاير": "On call", "نسرين": "A", "ديما": "On call", "زين": "Post call", "بشرى": "Post call", "هيا": "Off", "تماضر": "Off", "حرب": "Off" },
+    12: { "شلطف": "A", "دينا": "A", "عمر": "A", "مخطوب": "On call", "اريج": "A", "علاء": "Post call", "بشار": "Post call", "كريم": "Off", "براء": "A", "دالين": "On call", "حوارث": "Off", "فطاير": "Post call", "نسرين": "On call", "ديما": "Post call", "زين": "A", "بشرى": "On call", "هيا": "Off", "تماضر": "Off", "حرب": "Off" },
+    13: { "شلطف": "A", "دينا": "A", "عمر": "On call", "مخطوب": "Post call", "اريج": "A", "علاء": "A", "بشار": "A", "كريم": "On call", "براء": "A", "دالين": "Post call", "حوارث": "Off", "فطاير": "On call", "نسرين": "Post call", "ديما": "Off", "زين": "Off", "بشرى": "Post call", "هيا": "On call", "تماضر": "Off", "حرب": "Off" },
+    14: { "شلطف": "A", "دينا": "A", "عمر": "Post call", "مخطوب": "A", "اريج": "A", "علاء": "A", "بشار": "On call", "كريم": "Post call", "براء": "On call", "دالين": "A", "حوارث": "A", "فطاير": "Post call", "نسرين": "On call", "ديما": "On call", "زين": "Off", "بشرى": "Off", "هيا": "Post call", "تماضر": "Off", "حرب": "Off" },
+    15: { "شلطف": "Off", "دينا": "A", "عمر": "On call", "مخطوب": "On call", "اريج": "A", "علاء": "Off", "بشار": "Post call", "كريم": "On call", "براء": "Post call", "دالين": "Off", "حوارث": "A", "فطاير": "A", "نسرين": "Post call", "ديما": "Post call", "زين": "Off", "بشرى": "Off", "هيا": "On call", "تماضر": "Off", "حرب": "Off" },
+    16: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "A", "اريج": "Off", "علاء": "On call", "بشار": "Off", "كريم": "Off", "براء": "Off", "دالين": "On call", "حوارث": "Off", "فطاير": "Off", "نسرين": "Off", "ديما": "On call", "زين": "On call", "بشرى": "Off", "هيا": "Post call", "تماضر": "Off", "حرب": "Off" },
+    17: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "Off", "اريج": "On call", "علاء": "Off", "بشار": "Off", "كريم": "On call", "براء": "Off", "دالين": "Off", "حوارث": "Off", "فطاير": "Off", "نسرين": "Off", "ديما": "Off", "زين": "Off", "بشرى": "On call", "هيا": "Off", "تماضر": "Off", "حرب": "On call" },
+    18: { "شلطف": "A", "دينا": "A", "عمر": "A", "مخطوب": "On call", "اريج": "Post call", "علاء": "On call", "بشار": "On call", "كريم": "Post call", "براء": "A", "دالين": "A", "حوارث": "A", "فطاير": "On call", "نسرين": "A", "ديما": "On call", "زين": "Post call", "بشرى": "Post call", "هيا": "Off", "تماضر": "Off", "حرب": "Off" },
+    19: { "شلطف": "A", "دينا": "A", "عمر": "A", "مخطوب": "Post call", "اريج": "On call", "علاء": "Post call", "بشار": "Post call", "كريم": "A", "براء": "On call", "دالين": "Off", "حوارث": "A", "فطاير": "Post call", "نسرين": "On call", "ديما": "Post call", "زين": "On call", "بشرى": "Off", "هيا": "On call", "تماضر": "Off", "حرب": "Off" },
+    20: { "شلطف": "A", "دينا": "A", "عمر": "On call", "مخطوب": "Off", "اريج": "Post call", "علاء": "On call", "بشار": "A", "كريم": "Off", "براء": "Post call", "دالين": "On call", "حوارث": "Off", "فطاير": "On call", "نسرين": "Post call", "ديما": "Off", "زين": "Post call", "بشرى": "On call", "هيا": "Post call", "تماضر": "Off", "حرب": "Off" },
+    21: { "شلطف": "A", "دينا": "A", "عمر": "Post call", "مخطوب": "A", "اريج": "Off", "علاء": "Post call", "بشار": "On call", "كريم": "Off", "براء": "Off", "دالين": "Post call", "حوارث": "A", "فطاير": "Post call", "نسرين": "Off", "ديما": "On call", "زين": "A", "بشرى": "Post call", "هيا": "Off", "تماضر": "Off", "حرب": "Off" },
+    22: { "شلطف": "Off", "دينا": "Off", "عمر": "On call", "مخطوب": "On call", "اريج": "Off", "علاء": "Off", "بشار": "Post call", "كريم": "On call", "براء": "On call", "دالين": "Off", "حوارث": "Off", "فطاير": "On call", "نسرين": "On call", "ديما": "Post call", "زين": "Off", "بشرى": "Off", "هيا": "On call", "تماضر": "Off", "حرب": "Off" },
+    23: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "Off", "اريج": "Off", "علاء": "On call", "بشار": "Off", "كريم": "Off", "براء": "Off", "دالين": "On call", "حوارث": "Off", "فطاير": "Off", "نسرين": "Post call", "ديما": "Off", "زين": "Off", "بشرى": "Off", "هيا": "Post call", "تماضر": "Off", "حرب": "On call" },
+    24: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "Off", "اريج": "On call", "علاء": "Off", "بشار": "Off", "كريم": "Off", "براء": "Off", "دالين": "Off", "حوارث": "Off", "فطاير": "Off", "نسرين": "Off", "ديما": "On call", "زين": "On call", "بشرى": "Off", "هيا": "Off", "تماضر": "Off", "حرب": "Off" },
+    25: { "شلطف": "A", "دينا": "A", "عمر": "A", "مخطوب": "A", "اريج": "Post call", "علاء": "Off", "بشار": "On call", "كريم": "A", "براء": "A", "دالين": "A", "حوارث": "A", "فطاير": "On call", "نسرين": "Post call", "ديما": "Post call", "زين": "On call", "بشرى": "Off", "هيا": "On call", "تماضر": "Off", "حرب": "Off" },
+    26: { "شلطف": "A", "دينا": "Off", "عمر": "Off", "مخطوب": "Off", "اريج": "On call", "علاء": "On call", "بشار": "Post call", "كريم": "A", "براء": "A", "دالين": "A", "حوارث": "Off", "فطاير": "Post call", "نسرين": "Off", "ديما": "On call", "زين": "Post call", "بشرى": "On call", "هيا": "Post call", "تماضر": "Off", "حرب": "Off" },
+    27: { "شلطف": "A", "دينا": "Off", "عمر": "A", "مخطوب": "A", "اريج": "Post call", "علاء": "Post call", "بشار": "A", "كريم": "On call", "براء": "On call", "دالين": "A", "حوارث": "Off", "فطاير": "A", "نسرين": "Off", "ديما": "Post call", "زين": "On call", "بشرى": "Post call", "هيا": "On call", "تماضر": "Off", "حرب": "Off" },
+    28: { "شلطف": "A", "دينا": "A", "عمر": "Off", "مخطوب": "A", "اريج": "A", "علاء": "A", "بشار": "On call", "كريم": "Post call", "براء": "Post call", "دالين": "A", "حوارث": "A", "فطاير": "On call", "نسرين": "Off", "ديما": "On call", "زين": "Post call", "بشرى": "On call", "هيا": "Post call", "تماضر": "Off", "حرب": "Off" },
+    29: { "شلطف": "Off", "دينا": "A", "عمر": "On call", "مخطوب": "On call", "اريج": "A", "علاء": "Off", "بشار": "Post call", "كريم": "On call", "براء": "Off", "دالين": "Off", "حوارث": "A", "فطاير": "Post call", "نسرين": "A", "ديما": "Post call", "زين": "Off", "بشرى": "Post call", "هيا": "On call", "تماضر": "Off", "حرب": "Off" },
+    30: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "Off", "اريج": "Off", "علاء": "On call", "بشار": "On call", "كريم": "Off", "براء": "Off", "دالين": "Off", "حوارث": "Off", "فطاير": "On call", "نسرين": "Off", "ديما": "Off", "زين": "Off", "بشرى": "On call", "هيا": "Off", "تماضر": "A", "حرب": "Off" },
+    31: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "Off", "اريج": "On call", "علاء": "Off", "بشار": "Off", "كريم": "On call", "براء": "On call", "دالين": "Off", "حوارث": "Off", "فطاير": "Off", "نسرين": "Off", "ديما": "A", "زين": "Off", "بشرى": "Off", "هيا": "On call", "تماضر": "Off", "حرب": "Off" }
+};
+
+// UI Translations
+const TRANSLATIONS = {
+    ar: {
+        pageTitle: "جدول المناوبات والدوام - قسم الباطنية",
+        programBadge: "برنامج مقيمي الباطني",
+        hospitalName: "| مجمع فلسطين الطبي",
+        headerTitle: "جدول المناوبات والدوام",
+        syncText: "تحديث البيانات",
+        lastUpdatedPrefix: "آخر تحديث: ",
+        btnExport: "تصدير Excel",
+        btnPrint: "طباعة",
+        langBtn: "English",
+        tabAnalytics: "📊 التحليلات",
+        tabMatrix: "🗓️ الجدول الشامل للشهر",
+        tabResident: "👤 جدول الطبيب المقيم",
+        tabDaily: "📅 التوزيع اليومي للدوام",
+        kpiResidentsLabel: "عدد الأطباء المقيمين",
+        chartTitle: "توزيع عدد المناوبات لكل طبيب",
+        chartOnCallLegend: "عدد المناوبات (On Call)",
+        chartALegend: "A",
+        summaryTableTitle: "ملخص دوام المقيمين",
+        thDocName: "اسم الطبيب المقيم",
+        thOnCall: "المناوبات (On Call)",
+        thPostCall: "بعد المناوبة (Post Call)",
+        thDutyA: "A",
+        thOff: "أيام العطلة (Off)",
+        searchPlaceholder: "بحث باسم الطبيب...",
+        filterLabel: "تصفية:",
+        filterAll: "الكل",
+        filterOnCall: "مناوبة",
+        filterPostCall: "بعد المناوبة",
+        filterA: "A",
+        filterOff: "عطلة Off",
+        thMatrixDoc: "اسم الطبيب",
+        thMatrixOC: "م.",
+        badgeOnCall: "مناوبة",
+        badgePostCall: "بعد",
+        badgeA: "A",
+        badgeOff: "Off",
+        labelSelectDoc: "اختر الطبيب المقيم:",
+        statOnCall: "مناوبة (On Call)",
+        statPostCall: "بعد المناوبة",
+        statA: "A",
+        statOff: "أيام العطلة (Off)",
+        calendarTitle: "التقويم الشهري الشخصي",
+        dailySubtitle: "استعراض تفاصيل اليوم",
+        labelSelectDay: "حدد اليوم:",
+        cardTitleOnCall: "مناوبة (On Call)",
+        cardTitlePostCall: "بعد المناوبة (Post Call)",
+        cardTitleDutyA: "A",
+        cardTitleOff: "عطلة (Off)",
+        btnDetails: "التفاصيل",
+        noDoctors: "لا يوجد أطباء في هذه الحالة",
+        shiftDescriptions: {
+            "On call": "مناوبة كاملة (On Call)",
+            "Post call": "بعد المناوبة (Post Call)",
+            "A": "A",
+            "Off": "عطلة (Off)"
+        }
+    },
+    en: {
+        pageTitle: "On-Call & Duty Schedule - Internal Medicine",
+        programBadge: "IM Residents Schedule",
+        hospitalName: "| Palestine Medical Complex",
+        headerTitle: "On-Call & Duty Schedule",
+        syncText: "Update Data",
+        lastUpdatedPrefix: "Updated: ",
+        btnExport: "Export Excel",
+        btnPrint: "Print",
+        langBtn: "العربية",
+        tabAnalytics: "📊 Summary",
+        tabMatrix: "🗓️ Full Monthly Schedule",
+        tabResident: "👤 Resident Schedule",
+        tabDaily: "📅 Daily Duty Breakdown",
+        kpiResidentsLabel: "Total Residents",
+        chartTitle: "On-Call Shift Distribution Per Resident",
+        chartOnCallLegend: "On Call Shifts",
+        chartALegend: "A Shifts",
+        summaryTableTitle: "Residents Duty Summary",
+        thDocName: "Resident Name",
+        thOnCall: "On Call",
+        thPostCall: "Post Call",
+        thDutyA: "A",
+        thOff: "Off Days",
+        searchPlaceholder: "Search resident name...",
+        filterLabel: "Filter:",
+        filterAll: "All",
+        filterOnCall: "On Call",
+        filterPostCall: "Post Call",
+        filterA: "A",
+        filterOff: "Off",
+        thMatrixDoc: "Resident Name",
+        thMatrixOC: "OC",
+        badgeOnCall: "On Call",
+        badgePostCall: "Post Call",
+        badgeA: "A",
+        badgeOff: "Off",
+        labelSelectDoc: "Select Resident:",
+        statOnCall: "On Call",
+        statPostCall: "Post Call",
+        statA: "A",
+        statOff: "Off Days",
+        calendarTitle: "Personal Monthly Calendar",
+        dailySubtitle: "View Daily Details",
+        labelSelectDay: "Select Day:",
+        cardTitleOnCall: "On Call",
+        cardTitlePostCall: "Post Call",
+        cardTitleDutyA: "A",
+        cardTitleOff: "Off",
+        btnDetails: "Details",
+        noDoctors: "No residents for this status",
+        shiftDescriptions: {
+            "On call": "Full On Call",
+            "Post call": "Post Call",
+            "A": "A",
+            "Off": "Off"
+        }
+    }
+};
+
+let currentLang = 'ar';
+let activeMatrixFilter = 'ALL';
+let chartInstanceOnCall = null;
+let lastUpdatedTime = new Date();
+
+// On Load Initialization
+window.addEventListener('DOMContentLoaded', () => {
+    initDoctorSelect();
+    initDaySelects();
+    renderKPIs();
+    renderAnalyticsView();
+    renderMatrixTable();
+    renderIndividualRoster();
+    renderDailyBreakdown();
+    renderLastUpdated();
+    
+    // Automatically fetch latest data from Google Sheet
+    fetchSheetData(false);
+});
+
+// Render Last Updated Timestamp (Hour:minute format)
+function renderLastUpdated() {
+    const el = document.getElementById('lastUpdatedText');
+    if (!el || !lastUpdatedTime) return;
+
+    const t = TRANSLATIONS[currentLang];
+    const hours = String(lastUpdatedTime.getHours()).padStart(2, '0');
+    const minutes = String(lastUpdatedTime.getMinutes()).padStart(2, '0');
+    const day = String(lastUpdatedTime.getDate()).padStart(2, '0');
+    const month = String(lastUpdatedTime.getMonth() + 1).padStart(2, '0');
+
+    el.innerText = `${t.lastUpdatedPrefix}${day}/${month} ${hours}:${minutes}`;
+}
+
+// Fetch Data from Google Sheet "Counter"
+function fetchSheetData(isManualTrigger) {
+    const syncIcon = document.getElementById('syncIcon');
+    if (syncIcon) syncIcon.classList.add('fa-spin');
+
+    // Apps Script Container Environment Check
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+            .withSuccessHandler(onSheetDataLoaded)
+            .withFailureHandler(onSheetDataError)
+            .getScheduleData();
+        return;
+    }
+
+    // External Fetch via Deployed Web App URL
+    if (WEB_APP_URL) {
+        fetch(WEB_APP_URL + '?action=getData')
+            .then(res => res.json())
+            .then(data => onSheetDataLoaded(data))
+            .catch(err => onSheetDataError(err));
+        return;
+    }
+
+    if (syncIcon) syncIcon.classList.remove('fa-spin');
+    lastUpdatedTime = new Date();
+    renderLastUpdated();
+
+    if (isManualTrigger) {
+        alert(currentLang === 'ar' ? 'تم تحديث البيانات بنجاح.' : 'Data updated successfully.');
+    }
+}
+
+function onSheetDataLoaded(response) {
+    const syncIcon = document.getElementById('syncIcon');
+    if (syncIcon) syncIcon.classList.remove('fa-spin');
+
+    lastUpdatedTime = new Date();
+    renderLastUpdated();
+
+    if (response && response.status === 'success' && response.residents && response.rawSchedule) {
+        RESIDENTS = response.residents;
+        RAW_SCHEDULE = response.rawSchedule;
+        
+        initDoctorSelect();
+        initDaySelects();
+        renderKPIs();
+        renderAnalyticsView();
+        renderMatrixTable();
+        renderIndividualRoster();
+        renderDailyBreakdown();
+    }
+}
+
+function onSheetDataError(err) {
+    const syncIcon = document.getElementById('syncIcon');
+    if (syncIcon) syncIcon.classList.remove('fa-spin');
+    console.warn("Sheet sync error:", err);
+}
+
+// Toggle Language
+function toggleLanguage() {
+    currentLang = currentLang === 'ar' ? 'en' : 'ar';
+    const htmlEl = document.documentElement;
+    htmlEl.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+    htmlEl.setAttribute('lang', currentLang);
+
+    const t = TRANSLATIONS[currentLang];
+    document.getElementById('pageTitle').innerText = t.pageTitle;
+    document.getElementById('ui-programBadge').innerText = t.programBadge;
+    document.getElementById('ui-hospitalName').innerText = t.hospitalName;
+    document.getElementById('ui-headerTitle').innerText = t.headerTitle;
+    document.getElementById('syncText').innerText = t.syncText;
+    document.getElementById('ui-btnExport').innerText = t.btnExport;
+    document.getElementById('ui-btnPrint').innerText = t.btnPrint;
+    document.getElementById('langBtnText').innerText = t.langBtn;
+
+    document.getElementById('ui-tabAnalytics').innerText = t.tabAnalytics;
+    document.getElementById('ui-tabMatrix').innerText = t.tabMatrix;
+    document.getElementById('ui-tabResident').innerText = t.tabResident;
+    document.getElementById('ui-tabDaily').innerText = t.tabDaily;
+
+    document.getElementById('ui-kpiResidentsLabel').innerText = t.kpiResidentsLabel;
+    document.getElementById('ui-chartTitle').innerHTML = `<i class="fa-solid fa-chart-column text-rose-500"></i> ${t.chartTitle}`;
+    document.getElementById('ui-summaryTableTitle').innerHTML = `<i class="fa-solid fa-list-check text-indigo-500"></i> ${t.summaryTableTitle}`;
+
+    document.getElementById('ui-thDocName').innerText = t.thDocName;
+    document.getElementById('ui-thOnCall').innerText = t.thOnCall;
+    document.getElementById('ui-thPostCall').innerText = t.thPostCall;
+    document.getElementById('ui-thDutyA').innerText = t.thDutyA;
+    document.getElementById('ui-thOff').innerText = t.thOff;
+
+    document.getElementById('doctorSearchInput').placeholder = t.searchPlaceholder;
+    document.getElementById('ui-filterLabel').innerText = t.filterLabel;
+    document.getElementById('btn-filter-ALL').innerText = t.filterAll;
+    document.getElementById('btn-filter-Oncall').innerText = t.filterOnCall;
+    document.getElementById('btn-filter-Postcall').innerText = t.filterPostCall;
+    document.getElementById('btn-filter-A').innerText = t.filterA;
+    document.getElementById('btn-filter-Off').innerText = t.filterOff;
+
+    document.getElementById('ui-labelSelectDoc').innerText = t.labelSelectDoc;
+    document.getElementById('ui-calendarTitle').innerHTML = `<i class="fa-regular fa-calendar-days text-brand-500 text-2xl"></i> ${t.calendarTitle}`;
+
+    document.getElementById('ui-dailySubtitle').innerText = t.dailySubtitle;
+    document.getElementById('ui-labelSelectDay').innerText = t.labelSelectDay;
+
+    document.getElementById('ui-cardTitleOnCall').innerText = t.cardTitleOnCall;
+    document.getElementById('ui-cardTitlePostCall').innerText = t.cardTitlePostCall;
+    document.getElementById('ui-cardTitleDutyA').innerText = t.cardTitleDutyA;
+    document.getElementById('ui-cardTitleOff').innerText = t.cardTitleOff;
+
+    renderLastUpdated();
+    initDaySelects();
+    renderAnalyticsView();
+    renderMatrixTable();
+    renderIndividualRoster();
+    renderDailyBreakdown();
+}
+
+function toggleTheme() {
+    const htmlEl = document.documentElement;
+    const themeIcon = document.getElementById('themeIcon');
+    if (htmlEl.classList.contains('dark')) {
+        htmlEl.classList.remove('dark');
+        themeIcon.className = 'fa-solid fa-moon text-lg';
+    } else {
+        htmlEl.classList.add('dark');
+        themeIcon.className = 'fa-solid fa-sun text-lg';
+    }
+}
+
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-brand-600', 'text-white', 'shadow');
+        btn.classList.add('text-slate-300');
+    });
+
+    document.getElementById(`view-${tabId}`).classList.remove('hidden');
+    const activeBtn = document.getElementById(`tab-${tabId}`);
+    activeBtn.classList.add('bg-brand-600', 'text-white', 'shadow');
+    activeBtn.classList.remove('text-slate-300');
+
+    if(tabId === 'analytics') {
+        renderAnalyticsCharts();
+    }
+}
+
+function calculateDoctorStats(docName) {
+    let stats = { onCall: 0, postCall: 0, dutyA: 0, off: 0, total: 31 };
+    for (let day = 1; day <= 31; day++) {
+        if (!RAW_SCHEDULE[day]) continue;
+        const shift = RAW_SCHEDULE[day][docName];
+        if (shift === 'On call') stats.onCall++;
+        else if (shift === 'Post call') stats.postCall++;
+        else if (shift === 'A') stats.dutyA++;
+        else if (shift === 'Off') stats.off++;
+    }
+    return stats;
+}
+
+function renderKPIs() {
+    document.getElementById('kpi-total-residents').innerText = RESIDENTS.length;
+}
+
+function initDoctorSelect() {
+    const select = document.getElementById('residentSelect');
+    const prevVal = select.value;
+    select.innerHTML = '';
+    RESIDENTS.forEach(doc => {
+        const opt = document.createElement('option');
+        opt.value = doc;
+        opt.textContent = doc;
+        select.appendChild(opt);
+    });
+    if (prevVal && RESIDENTS.includes(prevVal)) {
+        select.value = prevVal;
+    }
+}
+
+function initDaySelects() {
+    const select = document.getElementById('daySelect');
+    const prevDay = select.value || 1;
+    const quickBar = document.getElementById('dayQuickPickerButtons');
+    select.innerHTML = '';
+    quickBar.innerHTML = '';
+
+    const isAr = currentLang === 'ar';
+
+    OCT_2026_DAYS.forEach(d => {
+        const dayName = isAr ? d.weekdayAR : d.weekdayEN;
+        const shortName = isAr ? d.weekdayAR.substring(0, 4) : d.weekdayENShort;
+
+        const opt = document.createElement('option');
+        opt.value = d.dayNum;
+        opt.textContent = `${dayName} - ${d.dayNum}`;
+        select.appendChild(opt);
+
+        const btn = document.createElement('button');
+        btn.onclick = () => {
+            select.value = d.dayNum;
+            renderDailyBreakdown();
+        };
+        btn.id = `quick-day-btn-${d.dayNum}`;
+        btn.className = `px-3 py-1.5 text-xs sm:text-sm font-bold rounded-xl whitespace-nowrap transition-all border ${
+            d.isWeekend 
+            ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-900' 
+            : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-800'
+        }`;
+        btn.textContent = `${d.dayNum} ${shortName}`;
+        quickBar.appendChild(btn);
+    });
+
+    select.value = prevDay;
+}
+
+function renderAnalyticsView() {
+    const tbody = document.getElementById('analyticsTableBody');
+    tbody.innerHTML = '';
+
+    const doctorData = RESIDENTS.map(doc => {
+        const stats = calculateDoctorStats(doc);
+        return { name: doc, ...stats };
+    });
+
+    doctorData.forEach((d, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors';
+        tr.innerHTML = `
+            <td class="p-4 text-slate-400 font-mono text-sm sm:text-base font-bold">${idx + 1}</td>
+            <td class="p-4 font-extrabold text-base sm:text-lg text-slate-900 dark:text-white">${d.name}</td>
+            <td class="p-4 text-center font-black text-base sm:text-lg text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/20">${d.onCall}</td>
+            <td class="p-4 text-center font-black text-base sm:text-lg text-amber-600 dark:text-amber-400">${d.postCall}</td>
+            <td class="p-4 text-center font-black text-base sm:text-lg text-indigo-600 dark:text-indigo-400">${d.dutyA}</td>
+            <td class="p-4 text-center font-black text-base sm:text-lg text-slate-600 dark:text-slate-400">${d.off}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    renderAnalyticsCharts();
+}
+
+function renderAnalyticsCharts() {
+    const ctxOnCall = document.getElementById('onCallChart').getContext('2d');
+    const t = TRANSLATIONS[currentLang];
+
+    const labels = RESIDENTS;
+    const onCallCounts = RESIDENTS.map(d => calculateDoctorStats(d).onCall);
+    const dutyACounts = RESIDENTS.map(d => calculateDoctorStats(d).dutyA);
+
+    if (chartInstanceOnCall) chartInstanceOnCall.destroy();
+
+    chartInstanceOnCall = new Chart(ctxOnCall, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: t.chartOnCallLegend,
+                    data: onCallCounts,
+                    backgroundColor: '#f43f5e',
+                    borderRadius: 6
+                },
+                {
+                    label: t.chartALegend,
+                    data: dutyACounts,
+                    backgroundColor: '#6366f1',
+                    borderRadius: 6
                 }
-            });
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top', labels: { font: { family: 'Cairo', size: 13, weight: 'bold' } } }
+            },
+            scales: {
+                x: { ticks: { font: { family: 'Cairo', size: 12, weight: 'bold' } } },
+                y: { beginAtZero: true, ticks: { precision: 0, font: { size: 12 } } }
+            }
+        }
+    });
+}
+
+function filterMatrixShift(shiftType) {
+    activeMatrixFilter = shiftType;
+    
+    ['ALL', 'Oncall', 'Postcall', 'A', 'Off'].forEach(tKey => {
+        const btn = document.getElementById(`btn-filter-${tKey}`);
+        if (btn) {
+            btn.classList.remove('ring-2', 'ring-slate-900', 'dark:ring-white');
+        }
+    });
+    
+    const activeBtnKey = shiftType === 'On call' ? 'Oncall' : shiftType === 'Post call' ? 'Postcall' : shiftType;
+    const currentBtn = document.getElementById(`btn-filter-${activeBtnKey}`);
+    if(currentBtn) currentBtn.classList.add('ring-2', 'ring-slate-900', 'dark:ring-white');
+
+    renderMatrixTable();
+}
+
+function renderMatrixTable() {
+    const headerRow = document.getElementById('matrixHeaderRow');
+    const tbody = document.getElementById('matrixTableBody');
+    const searchQuery = (document.getElementById('doctorSearchInput').value || '').trim().toLowerCase();
+    const t = TRANSLATIONS[currentLang];
+    const isAr = currentLang === 'ar';
+
+    headerRow.innerHTML = `
+        <th class="p-3 sticky-col bg-slate-900 text-white font-extrabold text-sm sm:text-base w-40 border-b border-slate-700 text-start shadow-md">
+            ${t.thMatrixDoc}
+        </th>
+        <th class="p-2 font-black text-center text-sm border-b border-slate-700 bg-slate-800 text-rose-300 w-12">
+            ${t.thMatrixOC}
+        </th>
+    `;
+
+    OCT_2026_DAYS.forEach(d => {
+        const dayName = isAr ? d.weekdayAR : d.weekdayENShort;
+        const th = document.createElement('th');
+        th.className = `p-2 text-center border-b border-slate-700 whitespace-nowrap min-w-[55px] ${
+            d.isWeekend ? 'bg-slate-800 text-rose-400 font-extrabold' : 'bg-slate-900 text-slate-200'
+        }`;
+        th.innerHTML = `
+            <div class="text-[11px] font-semibold opacity-80">${dayName}</div>
+            <div class="text-sm sm:text-base font-black">${d.dayNum}</div>
+        `;
+        headerRow.appendChild(th);
+    });
+
+    tbody.innerHTML = '';
+    const filteredResidents = RESIDENTS.filter(doc => doc.toLowerCase().includes(searchQuery));
+
+    filteredResidents.forEach(doc => {
+        const stats = calculateDoctorStats(doc);
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-100 dark:hover:bg-slate-700/40 transition-colors';
+
+        let html = `
+            <td class="p-3 font-extrabold text-sm sm:text-base text-slate-900 dark:text-white sticky-col bg-white dark:bg-slate-800 border-l border-r border-slate-200 dark:border-slate-700 shadow-sm">
+                ${doc}
+            </td>
+            <td class="p-2 text-center font-black text-sm sm:text-base text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/30 border-l border-r border-slate-200 dark:border-slate-700">
+                ${stats.onCall}
+            </td>
+        `;
+
+        OCT_2026_DAYS.forEach(d => {
+            const shift = (RAW_SCHEDULE[d.dayNum] && RAW_SCHEDULE[d.dayNum][doc]) ? RAW_SCHEDULE[d.dayNum][doc] : "Off";
+            let badgeStyle = '';
+            let labelText = '';
+
+            if (shift === 'On call') {
+                badgeStyle = 'bg-rose-500 text-white font-black shadow-sm';
+                labelText = t.badgeOnCall;
+            } else if (shift === 'Post call') {
+                badgeStyle = 'bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800 font-bold';
+                labelText = t.badgePostCall;
+            } else if (shift === 'A') {
+                badgeStyle = 'bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800 font-bold';
+                labelText = t.badgeA;
+            } else {
+                badgeStyle = 'bg-slate-100 text-slate-400 dark:bg-slate-800/80 dark:text-slate-500 font-medium';
+                labelText = t.badgeOff;
+            }
+
+            const isDimmed = (activeMatrixFilter !== 'ALL' && shift !== activeMatrixFilter);
+
+            html += `
+                <td class="p-1 text-center border-l border-r border-slate-100 dark:border-slate-800 ${isDimmed ? 'opacity-20' : ''}">
+                    <span class="inline-block w-full py-1.5 px-1 rounded-md text-xs font-bold transition-all ${badgeStyle}">
+                        ${labelText}
+                    </span>
+                </td>
+            `;
         });
 
-        function logout() {
-            document.getElementById('password-input').value = '';
-            document.getElementById('login-error').classList.add('hidden');
-            document.getElementById('dashboard-screen').classList.add('hidden');
-            document.getElementById('dashboard-screen').classList.remove('flex');
-            document.getElementById('login-screen').classList.remove('hidden');
+        tr.innerHTML = html;
+        tbody.appendChild(tr);
+    });
+}
+
+function renderIndividualRoster() {
+    const selectedDoc = document.getElementById('residentSelect').value || RESIDENTS[0];
+    document.getElementById('selectedDoctorNameDisplay').innerText = selectedDoc;
+
+    const stats = calculateDoctorStats(selectedDoc);
+    const t = TRANSLATIONS[currentLang];
+    const isAr = currentLang === 'ar';
+
+    const statsContainer = document.getElementById('residentStatsSummary');
+    statsContainer.innerHTML = `
+        <div class="bg-rose-50 dark:bg-rose-950/50 p-3.5 sm:p-4 rounded-2xl border border-rose-200 dark:border-rose-900 shadow-sm">
+            <span class="text-xs sm:text-sm font-extrabold text-rose-600 dark:text-rose-400 block">${t.statOnCall}</span>
+            <span class="text-2xl sm:text-3xl font-black text-rose-700 dark:text-rose-300 mt-1 block">${stats.onCall}</span>
+        </div>
+        <div class="bg-amber-50 dark:bg-amber-950/50 p-3.5 sm:p-4 rounded-2xl border border-amber-200 dark:border-amber-900 shadow-sm">
+            <span class="text-xs sm:text-sm font-extrabold text-amber-600 dark:text-amber-400 block">${t.statPostCall}</span>
+            <span class="text-2xl sm:text-3xl font-black text-amber-700 dark:text-amber-300 mt-1 block">${stats.postCall}</span>
+        </div>
+        <div class="bg-indigo-50 dark:bg-indigo-950/50 p-3.5 sm:p-4 rounded-2xl border border-indigo-200 dark:border-indigo-900 shadow-sm">
+            <span class="text-xs sm:text-sm font-extrabold text-indigo-600 dark:text-indigo-400 block">${t.statA}</span>
+            <span class="text-2xl sm:text-3xl font-black text-indigo-700 dark:text-indigo-300 mt-1 block">${stats.dutyA}</span>
+        </div>
+        <div class="bg-slate-100 dark:bg-slate-800 p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+            <span class="text-xs sm:text-sm font-extrabold text-slate-600 dark:text-slate-400 block">${t.statOff}</span>
+            <span class="text-2xl sm:text-3xl font-black text-slate-800 dark:text-slate-200 mt-1 block">${stats.off}</span>
+        </div>
+    `;
+
+    const calendarHeadersEl = document.getElementById('calendarWeekdayHeaders');
+    const weekdaysList = isAr ? WEEKDAYS_AR : WEEKDAYS_EN_SHORT;
+    calendarHeadersEl.innerHTML = weekdaysList.map((wd, idx) => `
+        <div class="${idx === 5 ? 'text-rose-500' : idx === 6 ? 'text-indigo-500' : ''}">${wd}</div>
+    `).join('');
+
+    const calendarGrid = document.getElementById('residentCalendarGrid');
+    calendarGrid.innerHTML = '';
+
+    for (let i = 0; i < 4; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'min-h-[100px] sm:min-h-[120px] bg-slate-50/50 dark:bg-slate-900/30 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800';
+        calendarGrid.appendChild(emptyCell);
+    }
+
+    OCT_2026_DAYS.forEach(d => {
+        const shift = (RAW_SCHEDULE[d.dayNum] && RAW_SCHEDULE[d.dayNum][selectedDoc]) ? RAW_SCHEDULE[d.dayNum][selectedDoc] : "Off";
+        const dayCell = document.createElement('div');
+        let cardBg = '';
+        let badgeColor = '';
+        let shiftTitle = t.shiftDescriptions[shift] || shift;
+
+        if (shift === 'On call') {
+            cardBg = 'bg-rose-50/90 dark:bg-rose-950/50 border-rose-300 dark:border-rose-800 shadow-sm';
+            badgeColor = 'bg-rose-600 text-white font-black';
+        } else if (shift === 'Post call') {
+            cardBg = 'bg-amber-50/90 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 shadow-sm';
+            badgeColor = 'bg-amber-500 text-white font-black';
+        } else if (shift === 'A') {
+            cardBg = 'bg-indigo-50/90 dark:bg-indigo-950/50 border-indigo-300 dark:border-indigo-800 shadow-sm';
+            badgeColor = 'bg-indigo-600 text-white font-black';
+        } else {
+            cardBg = 'bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800';
+            badgeColor = 'bg-slate-400 dark:bg-slate-700 text-white font-bold';
         }
 
-        function initDashboard() {
-            // Populate Datalist for Searchable Dropdown
-            const listEl = document.getElementById('resident-list');
-            listEl.innerHTML = '';
-            dashboardData.residents.forEach(res => {
-                const option = document.createElement('option');
-                option.value = res;
-                listEl.appendChild(option);
-            });
+        dayCell.className = `p-3 min-h-[110px] sm:min-h-[125px] rounded-2xl border flex flex-col justify-between transition-all hover:scale-[1.02] ${cardBg}`;
+        dayCell.innerHTML = `
+            <div class="flex items-center justify-between">
+                <span class="text-sm sm:text-base font-black ${d.isWeekend ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-200'}">${d.dayNum}</span>
+                <span class="text-xs sm:text-sm px-2.5 py-1 rounded-lg ${badgeColor}">${shift}</span>
+            </div>
+            <div class="mt-2 text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white truncate">
+                ${shiftTitle}
+            </div>
+            <div class="text-xs font-bold text-slate-400 mt-1">
+                ${isAr ? d.weekdayAR : d.weekdayENShort}
+            </div>
+        `;
+        calendarGrid.appendChild(dayCell);
+    });
+}
 
-            // Initialize main statistics chart
-            renderChart();
-            
-            // Select Day 1 by default
-            document.getElementById('day-input').value = 1;
-            renderDailyRoster(1);
-        }
+function renderDailyBreakdown() {
+    const selectedDayNum = parseInt(document.getElementById('daySelect').value) || 1;
+    const dayData = OCT_2026_DAYS.find(d => d.dayNum === selectedDayNum);
+    const isAr = currentLang === 'ar';
 
-        function clearDailyRoster() {
-            document.getElementById('display-day-name').textContent = "Invalid Day";
-            ['list-oncall', 'list-postcall', 'list-a', 'list-off'].forEach(id => {
-                document.getElementById(id).innerHTML = '';
-            });
-        }
+    const dayName = isAr ? dayData.weekdayAR : dayData.weekdayEN;
+    document.getElementById('selectedDayTitle').innerText = `${dayName}، ${selectedDayNum}`;
 
-        function renderDailyRoster(day) {
-            const schedule = dashboardData.schedule[day];
-            if(!schedule) return;
-
-            document.getElementById('display-day-name').textContent = schedule.dayOfWeek + " (Oct " + day + ")";
-            
-            const groups = { "On call": [], "Post call": [], "A": [], "Off": [] };
-            for(const [res, status] of Object.entries(schedule.assignments)) {
-                if(groups[status]) groups[status].push(res);
+    OCT_2026_DAYS.forEach(d => {
+        const btn = document.getElementById(`quick-day-btn-${d.dayNum}`);
+        if(btn) {
+            if(d.dayNum === selectedDayNum) {
+                btn.classList.add('ring-2', 'ring-brand-500', 'bg-brand-600', 'text-white');
+            } else {
+                btn.classList.remove('ring-2', 'ring-brand-500', 'bg-brand-600', 'text-white');
             }
-
-            const formatList = (arr) => arr.map(r => `<li>${r}</li>`).join('');
-            
-            document.getElementById('list-oncall').innerHTML = formatList(groups["On call"]);
-            document.getElementById('list-postcall').innerHTML = formatList(groups["Post call"]);
-            document.getElementById('list-a').innerHTML = formatList(groups["A"]);
-            document.getElementById('list-off').innerHTML = formatList(groups["Off"]);
         }
+    });
 
-        function renderResidentStats(resName) {
-            document.getElementById('resident-empty-state').classList.add('hidden');
-            const container = document.getElementById('resident-stats-container');
-            container.classList.remove('hidden');
-            container.classList.add('flex');
+    const shiftMap = { 'On call': [], 'Post call': [], 'A': [], 'Off': [] };
 
-            const stats = dashboardData.statistics[resName];
-            document.getElementById('stat-oncall').textContent = stats['On call'];
-            document.getElementById('stat-postcall').textContent = stats['Post call'];
-            document.getElementById('stat-a').textContent = stats['A'];
-            document.getElementById('stat-off').textContent = stats['Off'];
+    RESIDENTS.forEach(doc => {
+        const shift = (RAW_SCHEDULE[selectedDayNum] && RAW_SCHEDULE[selectedDayNum][doc]) ? RAW_SCHEDULE[selectedDayNum][doc] : "Off";
+        if (shiftMap[shift]) shiftMap[shift].push(doc);
+    });
 
-            const tableBody = document.getElementById('resident-schedule-table');
-            let tableHTML = '';
-            
-            for(let i=1; i<=31; i++) {
-                const s = dashboardData.schedule[i];
-                const status = s.assignments[resName];
-                
-                let badgeClass = "bg-emerald-100 text-emerald-800";
-                if(status === 'On call') badgeClass = "bg-red-100 text-red-800";
-                if(status === 'Post call') badgeClass = "bg-orange-100 text-orange-800";
-                if(status === 'A') badgeClass = "bg-blue-100 text-blue-800";
+    renderDailyCategoryList('daily-list-oncall', 'daily-count-oncall', shiftMap['On call'], 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900');
+    renderDailyCategoryList('daily-list-postcall', 'daily-count-postcall', shiftMap['Post call'], 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900');
+    renderDailyCategoryList('daily-list-duty', 'daily-count-duty', shiftMap['A'], 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900');
+    renderDailyCategoryList('daily-list-off', 'daily-count-off', shiftMap['Off'], 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800');
+}
 
-                tableHTML += `
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="p-2 font-semibold">Oct ${i}</td>
-                        <td class="p-2 text-slate-500">${s.dayOfWeek.substring(0,3)}</td>
-                        <td class="p-2 text-right">
-                            <span class="px-2 py-1 rounded text-[10px] font-bold tracking-wide uppercase ${badgeClass}">${status}</span>
-                        </td>
-                    </tr>
-                `;
-            }
-            tableBody.innerHTML = tableHTML;
-        }
+function renderDailyCategoryList(containerId, countId, doctorsList, cardStyle) {
+    const container = document.getElementById(containerId);
+    const countBadge = document.getElementById(countId);
+    const t = TRANSLATIONS[currentLang];
 
-        let mainChartInstance = null;
-        function renderChart() {
-            const ctx = document.getElementById('mainChart').getContext('2d');
-            
-            if(mainChartInstance) {
-                mainChartInstance.destroy();
-            }
+    countBadge.innerText = doctorsList.length;
+    container.innerHTML = '';
 
-            const labels = dashboardData.residents;
-            const dataOnCall = labels.map(r => dashboardData.statistics[r]['On call']);
-            const dataPostCall = labels.map(r => dashboardData.statistics[r]['Post call']);
-            const dataA = labels.map(r => dashboardData.statistics[r]['A']);
-            const dataOff = labels.map(r => dashboardData.statistics[r]['Off']);
+    if (doctorsList.length === 0) {
+        container.innerHTML = `<p class="text-sm text-slate-400 italic text-center py-6 font-bold">${t.noDoctors}</p>`;
+        return;
+    }
 
-            Chart.defaults.font.family = "'Inter', sans-serif";
-            
-            mainChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        { label: 'On Call', data: dataOnCall, backgroundColor: '#ef4444', borderRadius: 4 },
-                        { label: 'Post Call', data: dataPostCall, backgroundColor: '#f97316', borderRadius: 4 },
-                        { label: 'A-Shift', data: dataA, backgroundColor: '#3b82f6', borderRadius: 4 },
-                        { label: 'Off', data: dataOff, backgroundColor: '#10b981', borderRadius: 4 }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { stacked: true, grid: { display: false } },
-                        y: { stacked: true, border: { display: false } }
-                    },
-                    plugins: {
-                        legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } },
-                        tooltip: { mode: 'index', intersect: false }
-                    }
-                }
-            });
-        }
-    </script>
+    doctorsList.forEach(doc => {
+        const item = document.createElement('div');
+        item.className = `p-3.5 rounded-xl border flex items-center justify-between transition-all ${cardStyle}`;
+        item.innerHTML = `
+            <div class="flex items-center gap-2.5">
+                <i class="fa-solid fa-user-doctor text-base"></i>
+                <span class="font-black text-base sm:text-lg">${doc}</span>
+            </div>
+            <button onclick="inspectDoctor('${doc}')" class="text-xs sm:text-sm font-bold px-3 py-1 rounded-lg bg-white/70 dark:bg-slate-800/70 hover:bg-white dark:hover:bg-slate-800 border transition-all">
+                ${t.btnDetails}
+            </button>
+        `;
+        container.appendChild(item);
+    });
+}
+
+function inspectDoctor(docName) {
+    document.getElementById('residentSelect').value = docName;
+    switchTab('resident');
+    renderIndividualRoster();
+}
+
+function exportScheduleCSV() {
+    const isAr = currentLang === 'ar';
+    let csvContent = "\uFEFF";
+    
+    let headerRow = [isAr ? "اسم الطبيب" : "Resident Name"];
+    OCT_2026_DAYS.forEach(d => {
+        headerRow.push(`${d.dayNum} ${isAr ? d.weekdayAR : d.weekdayENShort}`);
+    });
+    csvContent += headerRow.join(",") + "\n";
+
+    RESIDENTS.forEach(doc => {
+        let row = [doc];
+        OCT_2026_DAYS.forEach(d => {
+            const shift = (RAW_SCHEDULE[d.dayNum] && RAW_SCHEDULE[d.dayNum][doc]) ? RAW_SCHEDULE[d.dayNum][doc] : "Off";
+            row.push(`"${shift}"`);
+        });
+        csvContent += row.join(",") + "\n";
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `PMC_IM_Schedule_${currentLang.toUpperCase()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+</script>
+
 </body>
 </html>
