@@ -212,7 +212,7 @@
         <div class="flex items-center justify-between mb-3 sm:mb-4">
             <h3 id="ui-chartTitle" class="font-black text-base sm:text-xl text-slate-900 dark:text-white flex items-center gap-2">
                 <i class="fa-solid fa-chart-column text-rose-500"></i>
-                توزيع عدد المناوبات لكل طبيب
+                توزيع المناوبات/A/الإجازات
             </h3>
         </div>
         <div class="h-64 sm:h-80">
@@ -419,22 +419,32 @@ const WEEKDAYS_AR = ["الأحد", "الإثنين", "الثلاثاء", "الأ
 const WEEKDAYS_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const WEEKDAYS_EN_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-const OCT_2026_DAYS = Array.from({length: 31}, (_, i) => {
-    const dayNum = i + 1;
-    const dayIdx = (i + 4) % 7;
-    return { 
-        dayNum, 
-        weekdayAR: WEEKDAYS_AR[dayIdx],
-        weekdayEN: WEEKDAYS_EN[dayIdx],
-        weekdayENShort: WEEKDAYS_EN_SHORT[dayIdx],
-        isWeekend: dayIdx === 5 || dayIdx === 6 
-    };
-});
+// Builds the month's day list. firstWeekdayIdx: 0 = Sunday ... 6 = Saturday.
+// Defaults to October 2026 (31 days, starts on Thursday) until the sheet says otherwise.
+function buildMonthDays(firstWeekdayIdx, daysInMonth) {
+    return Array.from({length: daysInMonth}, (_, i) => {
+        const dayNum = i + 1;
+        const dayIdx = (i + firstWeekdayIdx) % 7;
+        return { 
+            dayNum, 
+            dayIdx,
+            weekdayAR: WEEKDAYS_AR[dayIdx],
+            weekdayEN: WEEKDAYS_EN[dayIdx],
+            weekdayENShort: WEEKDAYS_EN_SHORT[dayIdx],
+            isWeekend: dayIdx === 5 || dayIdx === 6 
+        };
+    });
+}
+let MONTH_DAYS = buildMonthDays(4, 31);
+
+function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
 
 let RAW_SCHEDULE = {
     1: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "On call", "اريج": "Off", "علاء": "Off", "بشار": "Off", "كريم": "On call", "براء": "Post call", "دالين": "Off", "حوارث": "A", "فطاير": "Post call", "نسرين": "On call", "ديما": "Post call", "زين": "Off", "بشرى": "A", "هيا": "Off", "تماضر": "A", "حرب": "On call" },
     2: { "شلطف": "Off", "دينا": "Off", "عمر": "On call", "مخطوب": "Off", "اريج": "Off", "علاء": "Off", "بشار": "Off", "كريم": "Off", "براء": "Off", "دالين": "On call", "حوارث": "Off", "فطاير": "On call", "نسرين": "Off", "ديما": "A", "زين": "Off", "بشرى": "On call", "هيا": "Off", "تماضر": "Off", "حرب": "Off" },
-    3: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "Off", "اريج": "Off", "علاء": "A", "بشار": "Off", "كريم": "On call", "براء": "On call", "دالين": "Off", "حوارث": "Off", "فطاير": "Off", "نسرين": "On call", "ديما": "On call", "زين": "Off", "بشرى": "Off", "هيا": "Off", "تماضر": "Off", "حرب": "Off" },
+    3: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "Off", "اريج": "Off", "علاء": "A", "بشار": "Off", "كريم": "On call", "براء": "On call", "دالين": "Off", "حوارث": "Off", "فطاير": "Off", "نسرين": "On call", "ديما": "On call", "زين": "Off", "بشرى": "A", "هيا": "Off", "تماضر": "Off", "حرب": "Off" },
     4: { "شلطف": "A", "دينا": "A", "عمر": "A", "مخطوب": "Off", "اريج": "A", "علاء": "On call", "بشار": "A", "كريم": "Post call", "براء": "Post call", "دالين": "Off", "حوارث": "A", "فطاير": "On call", "نسرين": "Post call", "ديما": "Post call", "زين": "On call", "بشرى": "On call", "هيا": "Off", "تماضر": "A", "حرب": "Off" },
     5: { "شلطف": "A", "دينا": "A", "عمر": "A", "مخطوب": "A", "اريج": "On call", "علاء": "Post call", "بشار": "A", "كريم": "Off", "براء": "A", "دالين": "On call", "حوارث": "Off", "فطاير": "Post call", "نسرين": "On call", "ديما": "On call", "زين": "Post call", "بشرى": "Post call", "هيا": "Off", "تماضر": "A", "حرب": "Off" },
     6: { "شلطف": "A", "دينا": "A", "عمر": "On call", "مخطوب": "Off", "اريج": "Post call", "علاء": "A", "بشار": "A", "كريم": "Off", "براء": "Off", "دالين": "Post call", "حوارث": "Off", "فطاير": "On call", "نسرين": "Post call", "ديما": "Post call", "زين": "On call", "بشرى": "On call", "هيا": "Off", "تماضر": "A", "حرب": "Off" },
@@ -445,23 +455,23 @@ let RAW_SCHEDULE = {
     11: { "شلطف": "A", "دينا": "A", "عمر": "A", "مخطوب": "A", "اريج": "Post call", "علاء": "On call", "بشار": "On call", "كريم": "Post call", "براء": "Off", "دالين": "A", "حوارث": "A", "فطاير": "On call", "نسرين": "A", "ديما": "On call", "زين": "Post call", "بشرى": "Post call", "هيا": "Off", "تماضر": "Off", "حرب": "Off" },
     12: { "شلطف": "A", "دينا": "A", "عمر": "A", "مخطوب": "On call", "اريج": "A", "علاء": "Post call", "بشار": "Post call", "كريم": "Off", "براء": "A", "دالين": "On call", "حوارث": "Off", "فطاير": "Post call", "نسرين": "On call", "ديما": "Post call", "زين": "A", "بشرى": "On call", "هيا": "Off", "تماضر": "Off", "حرب": "Off" },
     13: { "شلطف": "A", "دينا": "A", "عمر": "On call", "مخطوب": "Post call", "اريج": "A", "علاء": "A", "بشار": "A", "كريم": "On call", "براء": "A", "دالين": "Post call", "حوارث": "Off", "فطاير": "On call", "نسرين": "Post call", "ديما": "Off", "زين": "Off", "بشرى": "Post call", "هيا": "On call", "تماضر": "Off", "حرب": "Off" },
-    14: { "شلطف": "A", "دينا": "A", "عمر": "Post call", "مخطوب": "A", "اريج": "A", "علاء": "A", "بشار": "On call", "كريم": "Post call", "براء": "On call", "دالين": "A", "حوارث": "A", "فطاير": "Post call", "نسرين": "On call", "ديما": "On call", "زين": "Off", "بشرى": "Off", "هيا": "Post call", "تماضر": "Off", "حرب": "Off" },
-    15: { "شلطف": "Off", "دينا": "A", "عمر": "On call", "مخطوب": "On call", "اريج": "A", "علاء": "Off", "بشار": "Post call", "كريم": "On call", "براء": "Post call", "دالين": "Off", "حوارث": "A", "فطاير": "A", "نسرين": "Post call", "ديما": "Post call", "زين": "Off", "بشرى": "Off", "هيا": "On call", "تماضر": "Off", "حرب": "Off" },
-    16: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "A", "اريج": "Off", "علاء": "On call", "بشار": "Off", "كريم": "Off", "براء": "Off", "دالين": "On call", "حوارث": "Off", "فطاير": "Off", "نسرين": "Off", "ديما": "On call", "زين": "On call", "بشرى": "Off", "هيا": "Post call", "تماضر": "Off", "حرب": "Off" },
-    17: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "Off", "اريج": "On call", "علاء": "Off", "بشار": "Off", "كريم": "On call", "براء": "Off", "دالين": "Off", "حوارث": "Off", "فطاير": "Off", "نسرين": "Off", "ديما": "Off", "زين": "Off", "بشرى": "On call", "هيا": "Off", "تماضر": "Off", "حرب": "On call" },
-    18: { "شلطف": "A", "دينا": "A", "عمر": "A", "مخطوب": "On call", "اريج": "Post call", "علاء": "On call", "بشار": "On call", "كريم": "Post call", "براء": "A", "دالين": "A", "حوارث": "A", "فطاير": "On call", "نسرين": "A", "ديما": "On call", "زين": "Post call", "بشرى": "Post call", "هيا": "Off", "تماضر": "Off", "حرب": "Off" },
-    19: { "شلطف": "A", "دينا": "A", "عمر": "A", "مخطوب": "Post call", "اريج": "On call", "علاء": "Post call", "بشار": "Post call", "كريم": "A", "براء": "On call", "دالين": "Off", "حوارث": "A", "فطاير": "Post call", "نسرين": "On call", "ديما": "Post call", "زين": "On call", "بشرى": "Off", "هيا": "On call", "تماضر": "Off", "حرب": "Off" },
-    20: { "شلطف": "A", "دينا": "A", "عمر": "On call", "مخطوب": "Off", "اريج": "Post call", "علاء": "On call", "بشار": "A", "كريم": "Off", "براء": "Post call", "دالين": "On call", "حوارث": "Off", "فطاير": "On call", "نسرين": "Post call", "ديما": "Off", "زين": "Post call", "بشرى": "On call", "هيا": "Post call", "تماضر": "Off", "حرب": "Off" },
-    21: { "شلطف": "A", "دينا": "A", "عمر": "Post call", "مخطوب": "A", "اريج": "Off", "علاء": "Post call", "بشار": "On call", "كريم": "Off", "براء": "Off", "دالين": "Post call", "حوارث": "A", "فطاير": "Post call", "نسرين": "Off", "ديما": "On call", "زين": "A", "بشرى": "Post call", "هيا": "Off", "تماضر": "Off", "حرب": "Off" },
-    22: { "شلطف": "Off", "دينا": "Off", "عمر": "On call", "مخطوب": "On call", "اريج": "Off", "علاء": "Off", "بشار": "Post call", "كريم": "On call", "براء": "On call", "دالين": "Off", "حوارث": "Off", "فطاير": "On call", "نسرين": "On call", "ديما": "Post call", "زين": "Off", "بشرى": "Off", "هيا": "On call", "تماضر": "Off", "حرب": "Off" },
-    23: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "Off", "اريج": "Off", "علاء": "On call", "بشار": "Off", "كريم": "Off", "براء": "Off", "دالين": "On call", "حوارث": "Off", "فطاير": "Off", "نسرين": "Post call", "ديما": "Off", "زين": "Off", "بشرى": "Off", "هيا": "Post call", "تماضر": "Off", "حرب": "On call" },
-    24: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "Off", "اريج": "On call", "علاء": "Off", "بشار": "Off", "كريم": "Off", "براء": "Off", "دالين": "Off", "حوارث": "Off", "فطاير": "Off", "نسرين": "Off", "ديما": "On call", "زين": "On call", "بشرى": "Off", "هيا": "Off", "تماضر": "Off", "حرب": "Off" },
+    14: { "شلطف": "A", "دينا": "A", "عمر": "Post call", "مخطوب": "A", "اريج": "A", "علاء": "A", "بشار": "On call", "كريم": "Post call", "براء": "On call", "دالين": "A", "حوارث": "A", "فطاير": "Post call", "نسرين": "Off", "ديما": "On call", "زين": "A", "بشرى": "On call", "هيا": "Post call", "تماضر": "Off", "حرب": "Off" },
+    15: { "شلطف": "Off", "دينا": "A", "عمر": "On call", "مخطوب": "On call", "اريج": "A", "علاء": "Off", "بشار": "Post call", "كريم": "On call", "براء": "Post call", "دالين": "Off", "حوارث": "A", "فطاير": "A", "نسرين": "Off", "ديما": "Post call", "زين": "A", "بشرى": "Post call", "هيا": "On call", "تماضر": "Off", "حرب": "Off" },
+    16: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "A", "اريج": "Off", "علاء": "On call", "بشار": "On call", "كريم": "Off", "براء": "Off", "دالين": "Off", "حوارث": "Off", "فطاير": "Off", "نسرين": "Off", "ديما": "Off", "زين": "Off", "بشرى": "On call", "هيا": "Off", "تماضر": "Off", "حرب": "On call" },
+    17: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "Off", "اريج": "On call", "علاء": "Off", "بشار": "Off", "كريم": "A", "براء": "On call", "دالين": "Off", "حوارث": "Off", "فطاير": "Off", "نسرين": "Off", "ديما": "On call", "زين": "Off", "بشرى": "Off", "هيا": "On call", "تماضر": "Off", "حرب": "Off" },
+    18: { "شلطف": "A", "دينا": "A", "عمر": "A", "مخطوب": "On call", "اريج": "Post call", "علاء": "On call", "بشار": "A", "كريم": "Off", "براء": "Post call", "دالين": "On call", "حوارث": "A", "فطاير": "Off", "نسرين": "On call", "ديما": "Post call", "زين": "A", "بشرى": "Off", "هيا": "Post call", "تماضر": "Off", "حرب": "Off" },
+    19: { "شلطف": "A", "دينا": "A", "عمر": "A", "مخطوب": "Post call", "اريج": "On call", "علاء": "Post call", "بشار": "A", "كريم": "Off", "براء": "Off", "دالين": "Post call", "حوارث": "Off", "فطاير": "A", "نسرين": "Post call", "ديما": "Off", "زين": "On call", "بشرى": "On call", "هيا": "On call", "تماضر": "Off", "حرب": "Off" },
+    20: { "شلطف": "A", "دينا": "A", "عمر": "On call", "مخطوب": "Off", "اريج": "Post call", "علاء": "On call", "بشار": "Off", "كريم": "A", "براء": "A", "دالين": "On call", "حوارث": "Off", "فطاير": "Off", "نسرين": "On call", "ديما": "Off", "زين": "Post call", "بشرى": "Post call", "هيا": "Post call", "تماضر": "Off", "حرب": "Off" },
+    21: { "شلطف": "A", "دينا": "A", "عمر": "Post call", "مخطوب": "A", "اريج": "Off", "علاء": "Post call", "بشار": "On call", "كريم": "A", "براء": "A", "دالين": "Post call", "حوارث": "A", "فطاير": "Off", "نسرين": "Post call", "ديما": "Off", "زين": "On call", "بشرى": "On call", "هيا": "On call", "تماضر": "Off", "حرب": "Off" },
+    22: { "شلطف": "Off", "دينا": "Off", "عمر": "On call", "مخطوب": "On call", "اريج": "Off", "علاء": "Off", "بشار": "Post call", "كريم": "On call", "براء": "Off", "دالين": "Off", "حوارث": "A", "فطاير": "On call", "نسرين": "A", "ديما": "Off", "زين": "Post call", "بشرى": "Post call", "هيا": "Post call", "تماضر": "Off", "حرب": "Off" },
+    23: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "Off", "اريج": "Off", "علاء": "On call", "بشار": "Off", "كريم": "Off", "براء": "On call", "دالين": "Off", "حوارث": "Off", "فطاير": "Off", "نسرين": "Off", "ديما": "A", "زين": "Off", "بشرى": "Off", "هيا": "On call", "تماضر": "Off", "حرب": "On call" },
+    24: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "Off", "اريج": "On call", "علاء": "Off", "بشار": "Off", "كريم": "Off", "براء": "Off", "دالين": "On call", "حوارث": "Off", "فطاير": "Off", "نسرين": "On call", "ديما": "On call", "زين": "Off", "بشرى": "Off", "هيا": "A", "تماضر": "Off", "حرب": "Off" },
     25: { "شلطف": "A", "دينا": "A", "عمر": "A", "مخطوب": "A", "اريج": "Post call", "علاء": "Off", "بشار": "On call", "كريم": "A", "براء": "A", "دالين": "A", "حوارث": "A", "فطاير": "On call", "نسرين": "Post call", "ديما": "Post call", "زين": "On call", "بشرى": "Off", "هيا": "On call", "تماضر": "Off", "حرب": "Off" },
     26: { "شلطف": "A", "دينا": "Off", "عمر": "Off", "مخطوب": "Off", "اريج": "On call", "علاء": "On call", "بشار": "Post call", "كريم": "A", "براء": "A", "دالين": "A", "حوارث": "Off", "فطاير": "Post call", "نسرين": "Off", "ديما": "On call", "زين": "Post call", "بشرى": "On call", "هيا": "Post call", "تماضر": "Off", "حرب": "Off" },
     27: { "شلطف": "A", "دينا": "Off", "عمر": "A", "مخطوب": "A", "اريج": "Post call", "علاء": "Post call", "بشار": "A", "كريم": "On call", "براء": "On call", "دالين": "A", "حوارث": "Off", "فطاير": "A", "نسرين": "Off", "ديما": "Post call", "زين": "On call", "بشرى": "Post call", "هيا": "On call", "تماضر": "Off", "حرب": "Off" },
     28: { "شلطف": "A", "دينا": "A", "عمر": "Off", "مخطوب": "A", "اريج": "A", "علاء": "A", "بشار": "On call", "كريم": "Post call", "براء": "Post call", "دالين": "A", "حوارث": "A", "فطاير": "On call", "نسرين": "Off", "ديما": "On call", "زين": "Post call", "بشرى": "On call", "هيا": "Post call", "تماضر": "Off", "حرب": "Off" },
     29: { "شلطف": "Off", "دينا": "A", "عمر": "On call", "مخطوب": "On call", "اريج": "A", "علاء": "Off", "بشار": "Post call", "كريم": "On call", "براء": "Off", "دالين": "Off", "حوارث": "A", "فطاير": "Post call", "نسرين": "A", "ديما": "Post call", "زين": "Off", "بشرى": "Post call", "هيا": "On call", "تماضر": "Off", "حرب": "Off" },
-    30: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "Off", "اريج": "Off", "علاء": "On call", "بشار": "On call", "كريم": "Off", "براء": "Off", "دالين": "Off", "حوارث": "Off", "فطاير": "On call", "نسرين": "Off", "ديما": "Off", "زين": "Off", "بشرى": "On call", "هيا": "Off", "تماضر": "A", "حرب": "Off" },
+    30: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "Off", "اريج": "Off", "علاء": "On call", "بشار": "On call", "كريم": "Off", "براء": "Off", "دالين": "Off", "حوارث": "Off", "فطاير": "On call", "نسرين": "Off", "ديما": "Off", "زين": "On call", "بشرى": "Off", "هيا": "A", "تماضر": "Off", "حرب": "Off" },
     31: { "شلطف": "Off", "دينا": "Off", "عمر": "Off", "مخطوب": "Off", "اريج": "On call", "علاء": "Off", "بشار": "Off", "كريم": "On call", "براء": "On call", "دالين": "Off", "حوارث": "Off", "فطاير": "Off", "نسرين": "Off", "ديما": "A", "زين": "Off", "بشرى": "Off", "هيا": "On call", "تماضر": "Off", "حرب": "Off" }
 };
 
@@ -474,6 +484,8 @@ const TRANSLATIONS = {
         headerTitle: "جدول المناوبات والدوام",
         syncText: "تحديث البيانات",
         lastUpdatedPrefix: "آخر تحديث: ",
+        syncFailedShort: "تعذر التحديث",
+        syncFailedMsg: "تعذر تحديث البيانات من Google Sheet. البيانات المعروضة قد لا تكون الأحدث.",
         btnExport: "تصدير Excel",
         btnPrint: "طباعة",
         langBtn: "English",
@@ -482,9 +494,10 @@ const TRANSLATIONS = {
         tabResident: "👤 جدول الطبيب المقيم",
         tabDaily: "📅 التوزيع اليومي للدوام",
         kpiResidentsLabel: "عدد الأطباء المقيمين",
-        chartTitle: "توزيع عدد المناوبات لكل طبيب",
+        chartTitle: "توزيع المناوبات/A/الإجازات",
         chartOnCallLegend: "عدد المناوبات (On Call)",
         chartALegend: "A",
+        chartOffLegend: "عدد أيام العطلة (Off)",
         summaryTableTitle: "ملخص دوام المقيمين",
         thDocName: "اسم الطبيب المقيم",
         thOnCall: "المناوبات (On Call)",
@@ -532,6 +545,8 @@ const TRANSLATIONS = {
         headerTitle: "On-Call & Duty Schedule",
         syncText: "Update Data",
         lastUpdatedPrefix: "Updated: ",
+        syncFailedShort: "Update failed",
+        syncFailedMsg: "Could not update data from the Google Sheet. The data shown may not be the latest.",
         btnExport: "Export Excel",
         btnPrint: "Print",
         langBtn: "العربية",
@@ -540,9 +555,10 @@ const TRANSLATIONS = {
         tabResident: "👤 Resident Schedule",
         tabDaily: "📅 Daily Duty Breakdown",
         kpiResidentsLabel: "Total Residents",
-        chartTitle: "On-Call Shift Distribution Per Resident",
+        chartTitle: "On-Call/A/Off Distribution",
         chartOnCallLegend: "On Call Shifts",
         chartALegend: "A Shifts",
+        chartOffLegend: "Off Days",
         summaryTableTitle: "Residents Duty Summary",
         thDocName: "Resident Name",
         thOnCall: "On Call",
@@ -606,11 +622,18 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // Render Last Updated Timestamp
+let lastSyncFailed = false;
+let isSyncing = false;
+
 function renderLastUpdated() {
     const el = document.getElementById('lastUpdatedText');
     if (!el || !lastUpdatedTime) return;
 
     const t = TRANSLATIONS[currentLang];
+    if (lastSyncFailed) {
+        el.innerText = t.syncFailedShort;
+        return;
+    }
     const hours = String(lastUpdatedTime.getHours()).padStart(2, '0');
     const minutes = String(lastUpdatedTime.getMinutes()).padStart(2, '0');
     const day = String(lastUpdatedTime.getDate()).padStart(2, '0');
@@ -621,26 +644,41 @@ function renderLastUpdated() {
 
 // Fetch Data from Google Sheet "Counter"
 function fetchSheetData(isManualTrigger) {
+    if (isSyncing) return;
+
     const syncIcon = document.getElementById('syncIcon');
-    if (syncIcon) syncIcon.classList.add('fa-spin');
+    const onOk = data => onSheetDataLoaded(data, isManualTrigger);
+    const onFail = err => onSheetDataError(err, isManualTrigger);
 
     if (typeof google !== 'undefined' && google.script && google.script.run) {
+        isSyncing = true;
+        if (syncIcon) syncIcon.classList.add('fa-spin');
         google.script.run
-            .withSuccessHandler(onSheetDataLoaded)
-            .withFailureHandler(onSheetDataError)
+            .withSuccessHandler(onOk)
+            .withFailureHandler(onFail)
             .getScheduleData();
         return;
     }
 
     if (WEB_APP_URL) {
-        fetch(WEB_APP_URL + '?action=getData')
-            .then(res => res.json())
-            .then(data => onSheetDataLoaded(data))
-            .catch(err => onSheetDataError(err));
+        isSyncing = true;
+        if (syncIcon) syncIcon.classList.add('fa-spin');
+        // Cache-busting query + no-store so the browser never serves an old copy
+        fetch(WEB_APP_URL + '?action=getData&_=' + Date.now(), { cache: 'no-store' })
+            .then(res => {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.text();
+            })
+            .then(text => {
+                let data;
+                try { data = JSON.parse(text); }
+                catch (e) { throw new Error('Invalid response from the web app (check that it is deployed with access: Anyone)'); }
+                onOk(data);
+            })
+            .catch(err => onFail(err));
         return;
     }
 
-    if (syncIcon) syncIcon.classList.remove('fa-spin');
     lastUpdatedTime = new Date();
     renderLastUpdated();
 
@@ -649,31 +687,64 @@ function fetchSheetData(isManualTrigger) {
     }
 }
 
-function onSheetDataLoaded(response) {
+function onSheetDataLoaded(response, isManualTrigger) {
+    isSyncing = false;
     const syncIcon = document.getElementById('syncIcon');
     if (syncIcon) syncIcon.classList.remove('fa-spin');
 
+    const valid = response && response.status === 'success' &&
+        Array.isArray(response.residents) && response.residents.length > 0 &&
+        response.rawSchedule && typeof response.rawSchedule === 'object';
+
+    if (!valid) {
+        onSheetDataError(new Error((response && response.message) || 'Unexpected response'), isManualTrigger);
+        return;
+    }
+
+    RESIDENTS = response.residents;
+    RAW_SCHEDULE = response.rawSchedule;
+
+    // Month layout from the sheet (falls back to the current layout if missing)
+    const daysInMonth = Number.isInteger(response.daysInMonth) && response.daysInMonth >= 28 && response.daysInMonth <= 31
+        ? response.daysInMonth : MONTH_DAYS.length;
+    const firstWeekday = Number.isInteger(response.firstWeekday) && response.firstWeekday >= 0 && response.firstWeekday <= 6
+        ? response.firstWeekday : MONTH_DAYS[0].dayIdx;
+    MONTH_DAYS = buildMonthDays(firstWeekday, daysInMonth);
+
+    if (Array.isArray(response.warnings) && response.warnings.length) {
+        console.warn('Sheet warnings:', response.warnings);
+    }
+
+    lastSyncFailed = false;
     lastUpdatedTime = new Date();
     renderLastUpdated();
 
-    if (response && response.status === 'success' && response.residents && response.rawSchedule) {
-        RESIDENTS = response.residents;
-        RAW_SCHEDULE = response.rawSchedule;
-        
-        initDoctorSelect();
-        initDaySelects();
-        renderKPIs();
-        renderAnalyticsView();
-        renderMatrixTable();
-        renderIndividualRoster();
-        renderDailyBreakdown();
+    initDoctorSelect();
+    initDaySelects();
+    renderKPIs();
+    renderAnalyticsView();
+    renderMatrixTable();
+    renderIndividualRoster();
+    renderDailyBreakdown();
+
+    if (isManualTrigger) {
+        alert(currentLang === 'ar' ? 'تم تحديث البيانات بنجاح.' : 'Data updated successfully.');
     }
 }
 
-function onSheetDataError(err) {
+function onSheetDataError(err, isManualTrigger) {
+    isSyncing = false;
     const syncIcon = document.getElementById('syncIcon');
     if (syncIcon) syncIcon.classList.remove('fa-spin');
     console.warn("Sheet sync error:", err);
+
+    // Never fail silently: the numbers on screen may be older than the sheet
+    lastSyncFailed = true;
+    renderLastUpdated();
+    if (isManualTrigger) {
+        const detail = err && err.message ? '\n\n' + err.message : '';
+        alert(TRANSLATIONS[currentLang].syncFailedMsg + detail);
+    }
 }
 
 // Toggle Language
@@ -765,8 +836,8 @@ function switchTab(tabId) {
 }
 
 function calculateDoctorStats(docName) {
-    let stats = { onCall: 0, postCall: 0, dutyA: 0, off: 0, total: 31 };
-    for (let day = 1; day <= 31; day++) {
+    let stats = { onCall: 0, postCall: 0, dutyA: 0, off: 0, total: MONTH_DAYS.length };
+    for (let day = 1; day <= MONTH_DAYS.length; day++) {
         if (!RAW_SCHEDULE[day]) continue;
         const shift = RAW_SCHEDULE[day][docName];
         if (shift === 'On call') stats.onCall++;
@@ -805,7 +876,7 @@ function initDaySelects() {
 
     const isAr = currentLang === 'ar';
 
-    OCT_2026_DAYS.forEach(d => {
+    MONTH_DAYS.forEach(d => {
         const dayName = isAr ? d.weekdayAR : d.weekdayEN;
         const shortName = isAr ? d.weekdayAR.substring(0, 4) : d.weekdayENShort;
 
@@ -830,6 +901,7 @@ function initDaySelects() {
     });
 
     select.value = prevDay;
+    if (!select.value) select.value = 1;
 }
 
 function renderAnalyticsView() {
@@ -846,7 +918,7 @@ function renderAnalyticsView() {
         tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors';
         tr.innerHTML = `
             <td class="p-2.5 sm:p-4 text-slate-400 font-mono text-xs sm:text-base font-bold">${idx + 1}</td>
-            <td class="p-2.5 sm:p-4 font-extrabold text-xs sm:text-lg text-slate-900 dark:text-white whitespace-nowrap">${d.name}</td>
+            <td class="p-2.5 sm:p-4 font-extrabold text-xs sm:text-lg text-slate-900 dark:text-white whitespace-nowrap">${escapeHtml(d.name)}</td>
             <td class="p-2.5 sm:p-4 text-center font-black text-xs sm:text-lg text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/20">${d.onCall}</td>
             <td class="p-2.5 sm:p-4 text-center font-black text-xs sm:text-lg text-amber-600 dark:text-amber-400">${d.postCall}</td>
             <td class="p-2.5 sm:p-4 text-center font-black text-xs sm:text-lg text-indigo-600 dark:text-indigo-400">${d.dutyA}</td>
@@ -863,8 +935,10 @@ function renderAnalyticsCharts() {
     const t = TRANSLATIONS[currentLang];
 
     const labels = RESIDENTS;
-    const onCallCounts = RESIDENTS.map(d => calculateDoctorStats(d).onCall);
-    const dutyACounts = RESIDENTS.map(d => calculateDoctorStats(d).dutyA);
+    const allStats = RESIDENTS.map(d => calculateDoctorStats(d));
+    const onCallCounts = allStats.map(s => s.onCall);
+    const dutyACounts = allStats.map(s => s.dutyA);
+    const offCounts = allStats.map(s => s.off);
 
     if (chartInstanceOnCall) chartInstanceOnCall.destroy();
 
@@ -883,6 +957,12 @@ function renderAnalyticsCharts() {
                     label: t.chartALegend,
                     data: dutyACounts,
                     backgroundColor: '#6366f1',
+                    borderRadius: 6
+                },
+                {
+                    label: t.chartOffLegend,
+                    data: offCounts,
+                    backgroundColor: '#94a3b8',
                     borderRadius: 6
                 }
             ]
@@ -934,7 +1014,7 @@ function renderMatrixTable() {
         </th>
     `;
 
-    OCT_2026_DAYS.forEach(d => {
+    MONTH_DAYS.forEach(d => {
         const dayName = isAr ? d.weekdayAR : d.weekdayENShort;
         const th = document.createElement('th');
         th.className = `p-1.5 sm:p-2 text-center border-b border-slate-700 whitespace-nowrap min-w-[42px] sm:min-w-[55px] ${
@@ -957,14 +1037,14 @@ function renderMatrixTable() {
 
         let html = `
             <td class="p-2 sm:p-3 font-extrabold text-xs sm:text-base text-slate-900 dark:text-white sticky-col bg-white dark:bg-slate-800 border-l border-r border-slate-200 dark:border-slate-700 shadow-sm whitespace-nowrap">
-                ${doc}
+                ${escapeHtml(doc)}
             </td>
             <td class="p-1.5 sm:p-2 text-center font-black text-xs sm:text-base text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/30 border-l border-r border-slate-200 dark:border-slate-700">
                 ${stats.onCall}
             </td>
         `;
 
-        OCT_2026_DAYS.forEach(d => {
+        MONTH_DAYS.forEach(d => {
             const shift = (RAW_SCHEDULE[d.dayNum] && RAW_SCHEDULE[d.dayNum][doc]) ? RAW_SCHEDULE[d.dayNum][doc] : "Off";
             let badgeStyle = '';
             let labelText = '';
@@ -1039,13 +1119,14 @@ function renderIndividualRoster() {
     const calendarGrid = document.getElementById('residentCalendarGrid');
     calendarGrid.innerHTML = '';
 
-    for (let i = 0; i < 4; i++) {
+    const leadingEmptyCells = MONTH_DAYS.length ? MONTH_DAYS[0].dayIdx : 0;
+    for (let i = 0; i < leadingEmptyCells; i++) {
         const emptyCell = document.createElement('div');
         emptyCell.className = 'min-h-[70px] sm:min-h-[110px] bg-slate-50/50 dark:bg-slate-900/30 rounded-xl sm:rounded-2xl border border-dashed border-slate-200 dark:border-slate-800';
         calendarGrid.appendChild(emptyCell);
     }
 
-    OCT_2026_DAYS.forEach(d => {
+    MONTH_DAYS.forEach(d => {
         const shift = (RAW_SCHEDULE[d.dayNum] && RAW_SCHEDULE[d.dayNum][selectedDoc]) ? RAW_SCHEDULE[d.dayNum][selectedDoc] : "Off";
         const dayCell = document.createElement('div');
         let cardBg = '';
@@ -1085,13 +1166,13 @@ function renderIndividualRoster() {
 
 function renderDailyBreakdown() {
     const selectedDayNum = parseInt(document.getElementById('daySelect').value) || 1;
-    const dayData = OCT_2026_DAYS.find(d => d.dayNum === selectedDayNum);
+    const dayData = MONTH_DAYS.find(d => d.dayNum === selectedDayNum) || MONTH_DAYS[0];
     const isAr = currentLang === 'ar';
 
     const dayName = isAr ? dayData.weekdayAR : dayData.weekdayEN;
     document.getElementById('selectedDayTitle').innerText = `${dayName}، ${selectedDayNum}`;
 
-    OCT_2026_DAYS.forEach(d => {
+    MONTH_DAYS.forEach(d => {
         const btn = document.getElementById(`quick-day-btn-${d.dayNum}`);
         if(btn) {
             if(d.dayNum === selectedDayNum) {
@@ -1134,12 +1215,13 @@ function renderDailyCategoryList(containerId, countId, doctorsList, cardStyle) {
         item.innerHTML = `
             <div class="flex items-center gap-2 sm:gap-2.5">
                 <i class="fa-solid fa-user-doctor text-xs sm:text-base"></i>
-                <span class="font-black text-xs sm:text-base md:text-lg">${doc}</span>
+                <span class="font-black text-xs sm:text-base md:text-lg">${escapeHtml(doc)}</span>
             </div>
-            <button onclick="inspectDoctor('${doc}')" class="text-[11px] sm:text-xs md:text-sm font-bold px-2.5 py-1 rounded-lg bg-white/70 dark:bg-slate-800/70 hover:bg-white dark:hover:bg-slate-800 border transition-all">
+            <button class="text-[11px] sm:text-xs md:text-sm font-bold px-2.5 py-1 rounded-lg bg-white/70 dark:bg-slate-800/70 hover:bg-white dark:hover:bg-slate-800 border transition-all">
                 ${t.btnDetails}
             </button>
         `;
+        item.querySelector('button').addEventListener('click', () => inspectDoctor(doc));
         container.appendChild(item);
     });
 }
@@ -1155,14 +1237,14 @@ function exportScheduleCSV() {
     let csvContent = "\uFEFF";
     
     let headerRow = [isAr ? "اسم الطبيب" : "Resident Name"];
-    OCT_2026_DAYS.forEach(d => {
+    MONTH_DAYS.forEach(d => {
         headerRow.push(`${d.dayNum} ${isAr ? d.weekdayAR : d.weekdayENShort}`);
     });
     csvContent += headerRow.join(",") + "\n";
 
     RESIDENTS.forEach(doc => {
-        let row = [doc];
-        OCT_2026_DAYS.forEach(d => {
+        let row = [`"${String(doc).replace(/"/g, '""')}"`];
+        MONTH_DAYS.forEach(d => {
             const shift = (RAW_SCHEDULE[d.dayNum] && RAW_SCHEDULE[d.dayNum][doc]) ? RAW_SCHEDULE[d.dayNum][doc] : "Off";
             row.push(`"${shift}"`);
         });
