@@ -12,8 +12,13 @@
     <script>
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyRQrolhSSQ6lG_zPLgErV8_f6Xl-N-Q_HghftpfBWWVAWj3XV1JwTM4buD8J707tec5w/exec";
 
+        // Password is kept only for this browser tab (cleared when the tab is closed)
+        let authPassword = null;
+        try { authPassword = sessionStorage.getItem('pmc_pw'); } catch (e) {}
+
         function requestSheetData(retries) {
-            return fetch(WEB_APP_URL + '?action=getData&_=' + Date.now(), { cache: 'no-store' })
+            const url = WEB_APP_URL + '?action=getData&password=' + encodeURIComponent(authPassword || '') + '&_=' + Date.now();
+            return fetch(url, { cache: 'no-store' })
                 .then(res => {
                     if (!res.ok) throw new Error('HTTP ' + res.status);
                     return res.text();
@@ -30,8 +35,9 @@
                 });
         }
 
-        // Started now; consumed once the page is ready. Never rejects.
-        window.__initialSheet = (typeof google === 'undefined')
+        // If this tab already has a password, start loading right away (in parallel with the libraries).
+        // Otherwise the login screen is shown first and nothing is requested. Never rejects.
+        window.__initialSheet = authPassword
             ? requestSheetData(1).then(data => ({ ok: true, data }), error => ({ ok: false, error }))
             : null;
     </script>
@@ -136,6 +142,32 @@
     </style>
 </head>
 <body class="text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+<!-- Password Gate -->
+<div id="authGate" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-brand-900 to-slate-900 overflow-y-auto">
+    <form id="authForm" onsubmit="submitPassword(event)" class="w-full max-w-sm bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 sm:p-8 text-center">
+        <div class="mx-auto mb-4 w-16 h-16 flex items-center justify-center rounded-2xl bg-brand-50 dark:bg-brand-950/50 text-brand-600 dark:text-brand-400 text-3xl">
+            <i class="fa-solid fa-lock"></i>
+        </div>
+        <span id="ui-authProgram" class="inline-block text-[11px] sm:text-xs font-bold tracking-wide uppercase px-2.5 py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-300 border border-brand-500/30">برنامج مقيمي الباطني</span>
+        <h2 id="ui-authTitle" class="mt-2 text-xl sm:text-2xl font-black text-slate-900 dark:text-white">جدول المناوبات والدوام</h2>
+        <p id="ui-authSubtitle" class="mt-1 mb-5 text-sm font-bold text-slate-500 dark:text-slate-400">أدخل كلمة المرور للمتابعة</p>
+
+        <input type="password" id="authPassword" dir="ltr" autocomplete="current-password" autofocus placeholder="كلمة المرور"
+            class="w-full py-2.5 px-4 text-center text-base sm:text-lg font-black bg-slate-50 dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all">
+        <p id="authError" class="hidden mt-2 text-sm font-bold text-rose-600 dark:text-rose-400"></p>
+
+        <button type="submit" id="authBtn" class="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-black text-sm sm:text-base transition-all shadow-sm active:scale-95 disabled:opacity-60">
+            <i class="fa-solid fa-right-to-bracket"></i>
+            <span id="ui-authBtn">دخول</span>
+        </button>
+
+        <button type="button" onclick="toggleLanguage()" class="mt-4 inline-flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-brand-600 dark:text-slate-400 dark:hover:text-brand-400 transition-all">
+            <i class="fa-solid fa-language"></i>
+            <span id="authLangBtnText">English</span>
+        </button>
+    </form>
+</div>
 
 <!-- Header Container -->
 <header class="bg-gradient-to-r from-slate-900 via-brand-900 to-slate-900 text-white shadow-lg sticky top-0 z-30 border-b border-slate-700">
@@ -480,6 +512,13 @@ const TRANSLATIONS = {
         syncText: "تحديث البيانات",
         lastUpdatedPrefix: "آخر تحديث: ",
         loadingShort: "جارٍ التحميل...",
+        authSubtitle: "أدخل كلمة المرور للمتابعة",
+        authPlaceholder: "كلمة المرور",
+        authBtn: "دخول",
+        authChecking: "جارٍ التحقق...",
+        authWrong: "كلمة المرور غير صحيحة",
+        authLocked: "محاولات خاطئة كثيرة. حاول مرة أخرى بعد بضع دقائق.",
+        authConnError: "تعذر الاتصال بالخادم. حاول مرة أخرى.",
         syncFailedShort: "تعذر التحديث",
         syncFailedMsg: "تعذر تحديث البيانات من Google Sheet. البيانات المعروضة قد لا تكون الأحدث.",
         btnExport: "تصدير Excel",
@@ -542,6 +581,13 @@ const TRANSLATIONS = {
         syncText: "Update Data",
         lastUpdatedPrefix: "Updated: ",
         loadingShort: "Loading...",
+        authSubtitle: "Enter the password to continue",
+        authPlaceholder: "Password",
+        authBtn: "Enter",
+        authChecking: "Checking...",
+        authWrong: "Wrong password",
+        authLocked: "Too many wrong attempts. Try again in a few minutes.",
+        authConnError: "Could not reach the server. Please try again.",
         syncFailedShort: "Update failed",
         syncFailedMsg: "Could not update data from the Google Sheet. The data shown may not be the latest.",
         btnExport: "Export Excel",
@@ -619,8 +665,9 @@ window.addEventListener('DOMContentLoaded', () => {
         isSyncing = true;
         document.getElementById('syncIcon').classList.add('fa-spin');
         window.__initialSheet.then(r => r.ok ? onSheetDataLoaded(r.data, false) : onSheetDataError(r.error, false));
+        hideGate();
     } else {
-        fetchSheetData(false);
+        showGate();
     }
 });
 
@@ -653,40 +700,77 @@ function renderLastUpdated() {
 // Fetch Data from Google Sheet "Counter"
 function fetchSheetData(isManualTrigger) {
     if (isSyncing) return;
+    if (!authPassword) { showGate(); return; }
 
     const syncIcon = document.getElementById('syncIcon');
-    const onOk = data => onSheetDataLoaded(data, isManualTrigger);
-    const onFail = err => onSheetDataError(err, isManualTrigger);
+    isSyncing = true;
+    if (syncIcon) syncIcon.classList.add('fa-spin');
+    requestSheetData(hasLoadedOnce ? 0 : 1)
+        .then(data => onSheetDataLoaded(data, isManualTrigger),
+              err => onSheetDataError(err, isManualTrigger));
+}
 
-    if (typeof google !== 'undefined' && google.script && google.script.run) {
-        isSyncing = true;
-        if (syncIcon) syncIcon.classList.add('fa-spin');
-        google.script.run
-            .withSuccessHandler(onOk)
-            .withFailureHandler(onFail)
-            .getScheduleData();
-        return;
-    }
+// ----- Password gate helpers -----
+let gateErrorKind = null;
 
-    if (WEB_APP_URL) {
-        isSyncing = true;
-        if (syncIcon) syncIcon.classList.add('fa-spin');
-        requestSheetData(hasLoadedOnce ? 0 : 1).then(onOk, onFail);
-        return;
-    }
+function showGate(errorKind) {
+    isSyncing = false;
+    const gate = document.getElementById('authGate');
+    gate.classList.remove('hidden');
+    setGateBusy(false);
+    const input = document.getElementById('authPassword');
+    input.value = '';
+    gateErrorKind = errorKind || null;
+    if (gateErrorKind) showGateError(gateErrorKind);
+    else document.getElementById('authError').classList.add('hidden');
+    setTimeout(() => input.focus(), 50);
+}
 
-    lastUpdatedTime = new Date();
-    renderLastUpdated();
+function hideGate() {
+    gateErrorKind = null;
+    setGateBusy(false);
+    document.getElementById('authGate').classList.add('hidden');
+}
 
-    if (isManualTrigger) {
-        alert(currentLang === 'ar' ? 'تم تحديث البيانات بنجاح.' : 'Data updated successfully.');
-    }
+function showGateError(kind) {
+    const t = TRANSLATIONS[currentLang];
+    const el = document.getElementById('authError');
+    el.innerText = kind === 'locked' ? t.authLocked : kind === 'conn' ? t.authConnError : t.authWrong;
+    el.classList.remove('hidden');
+}
+
+function setGateBusy(busy) {
+    const btn = document.getElementById('authBtn');
+    btn.disabled = busy;
+    document.getElementById('ui-authBtn').innerText = busy ? TRANSLATIONS[currentLang].authChecking : TRANSLATIONS[currentLang].authBtn;
+}
+
+function submitPassword(ev) {
+    ev.preventDefault();
+    const pw = document.getElementById('authPassword').value;
+    if (!pw || isSyncing) return;
+    authPassword = pw;
+    gateErrorKind = null;
+    document.getElementById('authError').classList.add('hidden');
+    setGateBusy(true);
+    fetchSheetData(false);
+}
+
+function forgetPassword() {
+    authPassword = null;
+    try { sessionStorage.removeItem('pmc_pw'); } catch (e) {}
 }
 
 function onSheetDataLoaded(response, isManualTrigger) {
     isSyncing = false;
     const syncIcon = document.getElementById('syncIcon');
     if (syncIcon) syncIcon.classList.remove('fa-spin');
+
+    if (response && (response.status === 'unauthorized' || response.status === 'locked')) {
+        forgetPassword();
+        showGate(response.status);
+        return;
+    }
 
     const valid = response && response.status === 'success' &&
         Array.isArray(response.residents) && response.residents.length > 0 &&
@@ -711,6 +795,8 @@ function onSheetDataLoaded(response, isManualTrigger) {
         console.warn('Sheet warnings:', response.warnings);
     }
 
+    try { sessionStorage.setItem('pmc_pw', authPassword); } catch (e) {}
+    hideGate();
     lastSyncFailed = false;
     hasLoadedOnce = true;
     lastUpdatedTime = new Date();
@@ -734,6 +820,13 @@ function onSheetDataError(err, isManualTrigger) {
     const syncIcon = document.getElementById('syncIcon');
     if (syncIcon) syncIcon.classList.remove('fa-spin');
     console.warn("Sheet sync error:", err);
+
+    if (!document.getElementById('authGate').classList.contains('hidden')) {
+        // Failure while logging in (not a wrong password): keep the gate, say why
+        authPassword = null;
+        showGate('conn');
+        return;
+    }
 
     // Never fail silently: the numbers on screen may be older than the sheet
     lastSyncFailed = true;
@@ -761,6 +854,14 @@ function toggleLanguage() {
     document.getElementById('ui-btnExport').innerText = t.btnExport;
     document.getElementById('ui-btnPrint').innerText = t.btnPrint;
     document.getElementById('langBtnText').innerText = t.langBtn;
+
+    document.getElementById('ui-authProgram').innerText = t.programBadge;
+    document.getElementById('ui-authTitle').innerText = t.headerTitle;
+    document.getElementById('ui-authSubtitle').innerText = t.authSubtitle;
+    document.getElementById('authPassword').placeholder = t.authPlaceholder;
+    document.getElementById('ui-authBtn').innerText = t.authBtn;
+    document.getElementById('authLangBtnText').innerText = t.langBtn;
+    if (gateErrorKind) showGateError(gateErrorKind);
 
     document.getElementById('ui-tabAnalytics').innerText = t.tabAnalytics;
     document.getElementById('ui-tabMatrix').innerText = t.tabMatrix;
